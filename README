@@ -1,0 +1,67 @@
+1. INTRODUCTION
+
+This project provides Lua bindings for the OpenSSL libcrypto libraries. 
+libcrypto provides digest functions, such as MD5, SHA-1, and HMAC; cipher
+functions, such as RC5 and Blowfish; public key crypto, such as RSA and
+Diffie-Hellman; and some other assorted tools (i.e. random number generation).
+
+Currently only the digest functions are mapped by this Lua binding.
+
+http://luacrypto.luaforge.net/
+  by Keith Howe <nezroy@luaforge.net>
+
+2. REQUIREMENTS
+
+ - Lua 5.1 - http://www.lua.org/
+
+   luacrypto requires Lua 5.1 since it uses the new Lua package system.
+   It should also work with Compat-5.1, though you will have to update the
+   build and libraries in order to support this.
+
+ - libcrypto 0.9.7+ - http://www.openssl.org/
+
+   luacrypto has only been built against and tested with OpenSSL versions
+   0.9.7 and above. It depends on additional API methods introduced in 0.9.7.
+
+2. INSTALLATION
+
+Edit the Makefile and set the following fields to the correct values for your
+environment:
+
+ LUAINC: The location of your Lua 5.1 include headers. This is required to
+   build the code.
+
+ LUA_PATH: The installation path for your system independent Lua files.
+ LUA_CPATH: The installation path for your system dependent Lua files. These
+   two settings are required to install the libraries properly.
+ 
+ LUA_TYPE: Set this to the type of Lua libraries you would like to install;
+   either "lc" for precompiled Lua libraries (using luac), or "lua" for
+   regular text Lua libraries.
+ 
+ LUA: The location of your Lua 5.1 interpreter; only needed to run the tests
+   and to generate the luadoc.
+ LUAC: The location of your Lua 5.1 compiler; only needed to build the
+   precompiled Lua libraries.
+
+ LDFLAGS: On most systems, the default value will be fine. However, if your
+   OpenSSL libcrypto library is not in the standard library paths, you may
+   need to point this at your OpenSSL install.
+ 
+ CFLAGS: On most systems, the default value will be fine. However, if your
+   OpenSSL libcrypto headers are not in the standard include paths, you may
+   need to point this at your OpenSSL install.
+
+Once configured, run "make" to build the libraries. This will also build the
+documentation using luadoc if you have set the location of your Lua
+interpreter. Run "make install" to install the libraries in the correct
+location. The install will run a test suite if you have set the location of
+your Lua interpreter. You can run the tests independently with "make tests",
+but you cannot run the tests until after you have run "make install".
+
+3. CREDITS
+
+Much of this code was heavily inspired by and/or lifted directly from the
+lmd5 project (http://luaforge.net/projects/lmd5/), written by
+Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>.
+

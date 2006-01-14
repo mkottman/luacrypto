@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>luacrypto documentation</title>
+  </head>
+  <body>
+  
+    <h1>Table of Contents</h1>
+    <ol>
+      <li><a href="#usage-easy">Quick &amp; Easy</a></li>
+      <li><a href="#usage-evp">EVP</a></li>
+      <li><a href="#usage-hmac">HMAC</a></li>
+    </ol>
+    
+    <h1><a name="usage-easy">Quick &amp; Easy</a></h1>
+    <p>This module is written to use the new Lua 5.1 package system. To use this module, you need to do:</p>
+    <pre><code>
+    local evp = require("crypto.evp")
+    local hmac = require("crypto.hmac")
+    </code></pre>
+    <p>This will put the EVP and HMAC package namespaces into the <var>evp</var> and <var>hmac</var> tables respectively. The simplest usage of these packages are:</p>
+    <pre><code>
+    assert(io.input(some_file))
+    local md5_of_some_file = evp.digest("md5", io.read("*all"))
+    
+    assert(io.input(some_file))
+    local hmac_of_some_file = hmac.digest("sha1", io.read("*all"), "hmackey")
+    </code></pre>
+    
+    <h1><a name="usage-evp">crypto.evp</a></h1>
+    <p>The crypto.evp library is a wrapper over the EVP_Digest* calls available in libcrypto. These calls handle all message digest creation operations for a wide variety of algorithms (SHA-1, MD5, etc). The luacrypto bindings provide two interfaces into this functionality. The first is a single function call interface that has no setup and no side-effects. The second is an object based interface that may be useful for some scenarios.</p>
+    
+    <h2>Functional Interface</h2>
+    
+    <h3>output = evp.digest(type, string, [raw])</h3>
+    <p>This function generates the message digest of the input <var>string</var> and returns it as <var>output</var>. The hashing algorithm to use is specified as a string by <var>type</var>, and this can be any one of the types allowed by OpenSSL (see <a href="http://www.openssl.org/docs/apps/dgst.html">their documentation</a> for a full list). Examples include "sha1" and "md5". The optional <var>raw</var> flag, defaulted to false, is a boolean value indicating whether the output should be formatted as a hexadecimal string (the default), or as a direct binary equivalent of the message digest.</p>
+    
+    <h2>Object Interface</h2>
+    <p>The object interface is mainly useful in cases where you want to increase efficiency. For instance, if you will be hashing a lot of different items using the same algorithm, you can create a new message digest object of the type required and reset it between each digest call, which will save you a little bit of setup overhead each time. Alternately, if you are hashing two or more items that have mostly the same content up until the end, you can load an object with the identical data, then clone off multiple copes to tack on the remaining, differing pieces of data for each.</p>
+    
+    <h3>d = evp.new(type)</h3>
+    <p>Creates a new EVP message digest object of the <var>type</var> specified. This is the string name of the hash algorithm to use, which can be any one of the allowed OpenSSL types (see <a href="http://www.openssl.org/docs/apps/dgst.html">their documentation</a> for a full list). Example types include "sha1" and "md5".</p>
+    
+    <h3>d:reset()</h3>
+    <p>Resets the internals of the EVP message digest object to a clean slate.</p>
+    
+    <h3>d2 = d:clone()</h3>
+    <p>Clones the message digest object and its current state, including data loaded to this point.</p>
+    
+    <h3>d:update(string)</h3>
+    <p>Appends the data in <var>string</var> to the current internal data set to be hashed.</p>
+    
+    <h3>output = d:digest([string], [raw])</h3>
+    <p>Generates the message digest for the internal data set, optionally appending on new data provided by <var>string</var> prior to hashing. The optional <var>raw</var> flag, defaulted to false, is a boolean value indicating whether the output should be formatted as a hexadecimal string (the default), or as a direct binary equivalent of the message digest.</p>
+    
+    <h1><a name="usage-hmac">crypto.hmac</a></h1>
+    <p>The crypto.hmac library is a wrapper over the HMAC_* calls available in libcrypto. These calls implement <a href="http://www.ietf.org/rfc/rfc2104.txt">Keyed-Hashing for Message Authentication (HMAC)</a>. HMAC can use any message digest type (SHA-1, MD5, etc). The luacrypto bindings provide two interfaces into this functionality. The first is a single function call interface that has no setup and no side-effects. The second is an object based interface that may be useful for some scenarios.</p>
+    
+    <h2>Functional Interface</h2>
+    
+    <h3>output = hmac.digest(type, string, key, [raw])</h3>
+    <p>This function generates the HMAC of the input <var>string</var> and returns it as <var>output</var>. The hashing algorithm to use is specified as a string by <var>type</var>, and this can be any one of the types allowed by OpenSSL (see <a href="http://www.openssl.org/docs/apps/dgst.html">their documentation</a> for a full list). Examples include "sha1" and "md5". The string provided in <var>key</var> will be used as the seed for the HMAC generation. The optional <var>raw</var> flag, defaulted to false, is a boolean value indicating whether the output should be formatted as a hexadecimal string (the default), or as a direct binary equivalent of the HMAC.</p>
+    
+    <h2>Object Interface</h2>
+    <p>The object interface is mainly useful in cases where you want to increase efficiency. For instance, if you will be generating HMACs for a lot of different items using the same algorithm, you can create a new HMAC object of the type required and reset it between each digest call, which will save you a little bit of setup overhead each time.</p>
+    
+    <h3>d = hmac.new(type, key)</h3>
+    <p>Creates a new HMAC object of the <var>type</var> specified. This is the string name of the hash algorithm to use, which can be any one of the allowed OpenSSL types (see <a href="http://www.openssl.org/docs/apps/dgst.html">their documentation</a> for a full list). Example types include "sha1" and "md5". The HMAC key to use is provided as a string in <var>key</var>.</p>
+    
+    <h3>d:reset()</h3>
+    <p>Resets the internals of the HMAC object to a clean slate.</p>
+    
+    <h3>d2 = d:clone()</h3>
+    <p>Clones the HMAC object and its current state, including data loaded to this point. DOES NOT WORK YET. Just returns a new pointer to the same object.</p>
+    
+    <h3>d:update(string)</h3>
+    <p>Appends the data in <var>string</var> to the current internal data set to be hashed.</p>
+    
+    <h3>output = d:digest([string], [raw])</h3>
+    <p>Generates the HMAC for the internal data set, optionally appending on new data provided by <var>string</var> prior to hashing. The optional <var>raw</var> flag, defaulted to false, is a boolean value indicating whether the output should be formatted as a hexadecimal string (the default), or as a direct binary equivalent of the message digest. Note that you can only run this method once on an object; running it a second time will product a bogus HMAC because the internal state is irrecovably destroyed after the first call.</p>
+  </body>
+</html>
