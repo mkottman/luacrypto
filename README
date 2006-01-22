@@ -27,8 +27,8 @@ http://luacrypto.luaforge.net/
 Edit the "config" file and set the fields to the correct values for your
 environment:
 
- LUAINC: The location of your Lua 5.1 include headers. This is required to
-   build the code.
+ LUAINC: The location of your Lua include headers. This is required to build
+ the code.
 
  LUA_PATH: The installation path for your system independent Lua files.
  LUA_CPATH: The installation path for your system dependent Lua files. These
