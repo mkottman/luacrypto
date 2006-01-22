@@ -39,8 +39,8 @@ environment:
  INSTALL_COMPAT: If you have set USE_COMPAT, you should also set this value to
    install the compat-5.1.lua module during "make install". However, if you
    already have the module installed (and possibly customised), leave this
-   unset to leave it unmolested during "make install".
- 
+   unset to keep it from being clobbered during "make install".
+
  (Note that the compat-5.1.lua module must be loaded before any wrapped 
   modules will work. See http://www.keplerproject.org/compat for details).
 
@@ -48,8 +48,8 @@ environment:
    either "lc" for precompiled Lua libraries (using luac), or "lua" for
    regular Lua libraries.
  
- LUA: The location of your Lua 5.1 interpreter; only needed to run the tests.
- LUAC: The location of your Lua 5.1 compiler; only needed to build the
+ LUA: The location of your Lua interpreter; only needed to run the tests.
+ LUAC: The location of your Lua compiler; only needed to build the
    precompiled Lua libraries.
 
  CRYPTOLIB: On most systems, the default value will be fine. However, if your
@@ -70,6 +70,5 @@ Much of this code was heavily inspired by and/or lifted directly from the
 lmd5 project (http://luaforge.net/projects/lmd5/), written by
 Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>.
 
-The Compat-5.1 library (http://www.keplerproject.org/compat/), written by
-the folks at the Kepler Project, is also included for Lua 5.0 support.
-
+The Compat-5.1 library (http://www.keplerproject.org/compat/) written by
+the folks at the Kepler Project is also included for Lua 5.0 support.
