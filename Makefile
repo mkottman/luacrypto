@@ -1,26 +1,14 @@
-# Change these to reflect your Lua installation locations. The system
-# independent Lua files (LUA_PATH), the system dependent Lua files (LUA_CPATH),
-# and the Lua include files (LUAINC) are required to compile and install.
-LUA_PATH = /usr/share/lua
-LUA_CPATH = /usr/local/lua
-LUAINC = /usr/include/lua
+# include in user config or use default values instead
+-include ./config
+LUA_PATH ?= /usr/share/lua
+LUA_CPATH ?= /usr/local/lua
+LUAINC ?= /usr/include/lua
+LUA ?= /usr/bin/lua
+LUAC ?= /usr/bin/luac
+CRYPTOLIB ?= -lcrypto
+LUATYPE ?= lc
 
-# The location of the Lua interpreter and Lua compiler are required to make the
-# tests and luadocs, and to generate compiled Lua libraries instead of source
-# Lua libraries for install.
-LUA = /usr/bin/lua
-LUAC = /usr/bin/luac
-
-# This provides the necessary flags for linking against your OpenSSL libcrypto
-# installation. Change it to suit your system if necessary.
-LDFLAGS = -lcrypto
-#CFLAGS =
-
-# Set this to lc to install the precompiled Lua libraries (compiled with luac),
-# or to lua to install the source Lua libraries.
-LUATYPE = lc
-
-# You shouldn't need to change anything below here.
+# other default stuff that generally won't change
 .SUFFIXES:
 srcdir := ./src
 outdir := ./obj
@@ -28,41 +16,46 @@ tstdir := ./tests
 INSTALL = install
 SHELL = /bin/sh
 MODULES = evp hmac
-CFLAGS = -I$(LUAINC) -ansi -pedantic -Wall -O2
-SOOBJS = $(outdir)/crypto.so $(foreach module,$(MODULES),$(outdir)/$(module).so)
-LCOBJS = $(outdir)/crypto.$(LUATYPE) $(foreach module,$(MODULES),$(outdir)/$(module).$(LUATYPE))
+CFLAGS = $(CRYPTOINC) $(LUAINC) -ansi -pedantic -Wall -O2
+SOOBJS = $(outdir)/crypto/core.so $(foreach module,$(MODULES),$(outdir)/crypto/$(module)/core.so)
+LCOBJS = $(outdir)/crypto.$(LUATYPE) $(foreach module,$(MODULES),$(outdir)/crypto/$(module).$(LUATYPE))
+LDFLAGS = $(CRYPTOLIB)
 
+# default target
 .PHONY: all $(outdir)
 all: $(outdir) $(SOOBJS) $(LCOBJS)
 
+# rule to create build directory
 $(outdir):
 	@if [ ! -d $(outdir) ]; then $(INSTALL) -d $(outdir); fi
+	@if [ ! -d $(outdir)/crypto ]; then $(INSTALL) -d $(outdir); fi
+	@$(foreach module,$(MODULES),if [ ! -d $(outdir)/crypto/$(module) ]; then $(INSTALL) -d $(outdir)/crypto/$(module); fi ; )
 
-$(outdir)/%.so:	$(outdir)/%.o
+# rules for building the final so's
+$(outdir)/%/core.so: $(outdir)/%.o
 	$(CC) $(LDFLAGS) -shared $< -o $@
 
-$(outdir)/%.o:	$(srcdir)/%.c 
+$(outdir)/crypto/%/core.so: $(outdir)/%.o
+	$(CC) $(LDFLAGS) -shared $< -o $@
+
+# rules for building intermediary objects
+$(outdir)/%.o: $(srcdir)/%.c $(srcdir)/%.h
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
-$(outdir)/%.lc:	$(srcdir)/%.lua
+# rules for building the final lua/lc files
+$(outdir)/%.lc: $(srcdir)/%.lua
+	$(LUAC) $(LUACFLAGS) -o $@ $<
+
+$(outdir)/crypto/%.lc: $(srcdir)/%.lua
 	$(LUAC) $(LUACFLAGS) -o $@ $<
 
 $(outdir)/%.lua: $(srcdir)/%.lua
 	cp $< $@
 
-luadoc: $(srcdir)/crypto.lua $(foreach module,$(MODULES),$(srcdir)/$(module).lua)
-	@if [ -x $(LUA) ]; then \
-		echo "Building luadoc..."; \
-		LUA_PATH="$(LUA_PATH)/?.$(LUATYPE)"; \
-		LUA_CPATH="$(LUA_CPATH)/?.so"; \
-		export LUA_PATH LUA_CPATH; \
-		$(LUA) $(srcdir)/test.lua $(srcdir)/crypto.lua; \
-	else \
-		echo "Lua interpreter not found; not building luadoc."; \
-		echo "Set LUA to your interpreter location and execute"; \
-		echo "'make tests' to run the test suite."; \
-	fi
+$(outdir)/crypto/%.lua: $(srcdir)/%.lua
+	cp $< $@
 
+# cleanup rules
 .PHONY: clean distclean mostlyclean
 clean:
 	rm -fr $(outdir)
@@ -74,11 +67,12 @@ mostlyclean:
 	rm -fr $(outdir)/*
 	rm -f ./core ./core.*
 
+# template for generating un/install rules
 define INSTALL_TEMPLATE
-$(1)_install: $(outdir)/$(1).so $(outdir)/$(1).$(LUATYPE)
+$(1)_install: $(outdir)/crypto/$(1)/core.so $(outdir)/crypto/$(1).$(LUATYPE)
 	$(INSTALL) -d $(LUA_CPATH)/crypto/$(1)
-	$(INSTALL) -D $(outdir)/$(1).so $(LUA_CPATH)/crypto/$(1)/core.so
-	$(INSTALL) -D $(outdir)/$(1).$(LUATYPE) $(LUA_PATH)/crypto/$(1).$(LUATYPE)
+	$(INSTALL) -D $(outdir)/crypto/$(1)/core.so $(LUA_CPATH)/crypto/$(1)/core.so
+	$(INSTALL) -D $(outdir)/crypto/$(1).$(LUATYPE) $(LUA_PATH)/crypto/$(1).$(LUATYPE)
 
 $(1)_uninstall:
 	-rm $(LUA_CPATH)/crypto/$(1)/core.so
@@ -86,6 +80,7 @@ $(1)_uninstall:
 	-rm $(LUA_PATH)/crypto/$(1).$(LUATYPE)
 endef
 
+# install rules
 $(foreach module,$(MODULES),$(eval $(call INSTALL_TEMPLATE,$(module))))
 
 .PHONY: install crypto_install uninstall crypto_uninstall
@@ -93,11 +88,12 @@ $(foreach module,$(MODULES),$(eval $(call INSTALL_TEMPLATE,$(module))))
 crypto_install:
 	$(INSTALL) -d $(LUA_PATH)/crypto/
 	$(INSTALL) -d $(LUA_CPATH)/crypto/
-	$(INSTALL) -D $(outdir)/crypto.so $(LUA_CPATH)/crypto/core.so
+	$(INSTALL) -D $(outdir)/crypto/core.so $(LUA_CPATH)/crypto/core.so
 	$(INSTALL) -D $(outdir)/crypto.$(LUATYPE) $(LUA_CPATH)/crypto.$(LUATYPE)
 
-install: crypto_install $(foreach module,$(MODULES),$(module)_install) tests ;
+install: crypto_install $(foreach module,$(MODULES),$(module)_install) ;
 
+# uninstall rules
 crypto_uninstall:
 	-rm $(LUA_CPATH)/crypto/core.so
 	-rm -r $(LUA_CPATH)/crypto/
@@ -106,13 +102,14 @@ crypto_uninstall:
 
 uninstall: $(foreach module,$(MODULES),$(module)_uninstall) crypto_uninstall
 
+# rule to run the test suite
 .PHONY: tests
 tests:
 	@echo ""
 	@if [ -x $(LUA) ]; then \
 		echo "Running tests..."; \
-		LUA_PATH="$(LUA_PATH)/?.$(LUATYPE)"; \
-		LUA_CPATH="$(LUA_CPATH)/?.so"; \
+		LUA_PATH="$(outdir)/?.$(LUATYPE)"; \
+		LUA_CPATH="$(outdir)/?.so"; \
 		export LUA_PATH LUA_CPATH; \
 		$(LUA) $(tstdir)/test.lua $(tstdir)/message; \
 	else \

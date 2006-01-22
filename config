@@ -1,0 +1,21 @@
+# Change these to reflect your Lua installation locations. The system
+# independent Lua files (LUA_PATH), the system dependent Lua files (LUA_CPATH),
+# and the Lua include files (LUAINC) are required to compile and install.
+LUA_PATH = /usr/share/lua
+LUA_CPATH = /usr/local/lua
+LUAINC = -I/usr/include/lua
+
+# The location of the Lua interpreter and Lua compiler are required to run the
+# test suite and to generate precompiled Lua libraries instead of source Lua
+# libraries for install.
+LUA = /usr/bin/lua
+LUAC = /usr/bin/luac
+
+# This provides the necessary flags for linking against your OpenSSL libcrypto
+# installation. Change it to suit your system if necessary.
+CRYPTOLIB = -lcrypto
+CRYPTOINC =
+
+# Set this to lc to install the precompiled Lua libraries (compiled with luac),
+# or to lua to install the source Lua libraries.
+LUATYPE = lc
