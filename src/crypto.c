@@ -27,6 +27,9 @@
 
 #include "lua.h"
 #include "lauxlib.h"
+#ifdef USE_COMPAT
+  #include "compat-5.1.h"
+#endif
 
 /* code registered as functions */
 static const luaL_reg f[] =

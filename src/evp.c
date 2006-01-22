@@ -27,6 +27,9 @@
 
 #include "lua.h"
 #include "lauxlib.h"
+#ifdef USE_COMPAT
+  #include "compat-5.1.h"
+#endif
 
 static EVP_MD_CTX *Pget(lua_State *L, int i)
 {

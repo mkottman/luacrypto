@@ -1,9 +1,20 @@
 # Change these to reflect your Lua installation locations. The system
 # independent Lua files (LUA_PATH), the system dependent Lua files (LUA_CPATH),
-# and the Lua include files (LUAINC) are required to compile and install.
+# and the Lua include files (LUAINC) are required to compile and install. Set
+# USE_COMPAT to 1 if you building for a Lua 5.0 environment, or leave it blank
+# if you are building for a Lua 5.1 environment.
 LUA_PATH = /usr/share/lua
 LUA_CPATH = /usr/local/lua
 LUAINC = -I/usr/include/lua
+
+# If your target environment is Lua 5.1, leave both of these COMPAT flags unset.
+# If your target environment is Lua 5.0, the USE_COMPAT flag must be set to 1
+# to use the Compat-5.1 module emulation. If you already have Compat-5.1
+# installed in your LUA_PATH and don't want to overwrite it, set INSTALL_COMPAT
+# to a blank value; otherwise, it should be set to 1 if USE_COMPAT is set. See
+# http://www.keplerproject.org/compat/ for more details about Compat-5.1.
+USE_COMPAT =
+INSTALL_COMPAT =
 
 # The location of the Lua interpreter and Lua compiler are required to run the
 # test suite and to generate precompiled Lua libraries instead of source Lua

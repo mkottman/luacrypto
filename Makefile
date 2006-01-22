@@ -16,7 +16,9 @@ tstdir := ./tests
 INSTALL = install
 SHELL = /bin/sh
 MODULES = evp hmac
-CFLAGS = $(CRYPTOINC) $(LUAINC) -ansi -pedantic -Wall -O2
+COMPAT_DIR = contrib/compat-5.1r4
+COMPAT_O = $(if $(USE_COMPAT),$(outdir)/compat-5.1.o)
+CFLAGS = $(CRYPTOINC) $(LUAINC) $(if $(USE_COMPAT),-I$(COMPAT_DIR) -DUSE_COMPAT) -ansi -pedantic -Wall -O2
 SOOBJS = $(outdir)/crypto/core.so $(foreach module,$(MODULES),$(outdir)/crypto/$(module)/core.so)
 LCOBJS = $(outdir)/crypto.$(LUATYPE) $(foreach module,$(MODULES),$(outdir)/crypto/$(module).$(LUATYPE))
 LDFLAGS = $(CRYPTOLIB)
@@ -32,14 +34,17 @@ $(outdir):
 	@$(foreach module,$(MODULES),if [ ! -d $(outdir)/crypto/$(module) ]; then $(INSTALL) -d $(outdir)/crypto/$(module); fi ; )
 
 # rules for building the final so's
-$(outdir)/%/core.so: $(outdir)/%.o
-	$(CC) $(LDFLAGS) -shared $< -o $@
+$(outdir)/%/core.so: $(outdir)/%.o $(COMPAT_O)
+	$(CC) $(LDFLAGS) -shared $< $(COMPAT_O) -o $@
 
-$(outdir)/crypto/%/core.so: $(outdir)/%.o
-	$(CC) $(LDFLAGS) -shared $< -o $@
+$(outdir)/crypto/%/core.so: $(outdir)/%.o $(COMPAT_O)
+	$(CC) $(LDFLAGS) -shared $< $(COMPAT_O) -o $@
 
 # rules for building intermediary objects
 $(outdir)/%.o: $(srcdir)/%.c $(srcdir)/%.h
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+$(outdir)/compat-5.1.o: $(COMPAT_DIR)/compat-5.1.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 # rules for building the final lua/lc files
@@ -91,7 +96,10 @@ crypto_install:
 	$(INSTALL) -D $(outdir)/crypto/core.so $(LUA_CPATH)/crypto/core.so
 	$(INSTALL) -D $(outdir)/crypto.$(LUATYPE) $(LUA_CPATH)/crypto.$(LUATYPE)
 
-install: crypto_install $(foreach module,$(MODULES),$(module)_install) ;
+compat_install:
+	$(INSTALL) -D $(COMPAT_DIR)/compat-5.1.lua $(LUA_PATH)/compat-5.1.lua
+
+install: crypto_install $(foreach module,$(MODULES),$(module)_install) $(if $(INSTALL_COMPAT),compat_install) ;
 
 # uninstall rules
 crypto_uninstall:
@@ -110,6 +118,7 @@ tests:
 		echo "Running tests..."; \
 		LUA_PATH="$(outdir)/?.$(LUATYPE)"; \
 		LUA_CPATH="$(outdir)/?.so"; \
+		$(if $(USE_COMPAT),LUA_INIT="@$(COMPAT_DIR)/compat-5.1.lua"; export LUA_INIT;) \
 		export LUA_PATH LUA_CPATH; \
 		$(LUA) $(tstdir)/test.lua $(tstdir)/message; \
 	else \
