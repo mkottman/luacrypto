@@ -1,3 +1,4 @@
+#!/usr/local/bin/lua50
 --[[
 -- Copyright (c) 2006 Keith Howe <nezroy@luaforge.net>
 --
@@ -21,15 +22,15 @@
 --
 --]]
 
-local evp = require("crypto.evp")
-local hmac = require("crypto.hmac")
+require("crypto")
+local evp = crypto.evp
+local hmac = crypto.hmac
 
 md5_KNOWN = "09920f6f666f8e7b09a8d00bd4d06873"
 sha1_KNOWN = "d6ed6e26ebeb37ba0792ec75a3d0b4dcec279d25"
 hmac_KNOWN = "70a7ea81a287d094c534cdd67be82e85066e13be"
 
-print("EVP version: " .. evp.version)
-print("HMAC version: " .. hmac.version)
+print("LuaCrypto version: " .. crypto._VERSION)
 print("")
 
 function report(w, s, F, t)

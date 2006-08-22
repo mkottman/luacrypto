@@ -1,32 +1,21 @@
-# Change these to reflect your Lua installation locations. The system
-# independent Lua files (LUA_PATH), the system dependent Lua files (LUA_CPATH),
-# and the Lua include files (LUAINC) are required to compile and install. Set
-# USE_COMPAT to 1 if you building for a Lua 5.0 environment, or leave it blank
-# if you are building for a Lua 5.1 environment.
-LUA_PATH = /usr/share/lua
-LUA_CPATH = /usr/local/lua
-LUAINC = -I/usr/include/lua
+# Installation directories
+# System's libraries directory (where binary libraries are installed)
+LUA_LIBDIR= /usr/local/lib/lua/5.0
+# Lua includes directory
+LUA_INC= /usr/local/include
 
-# If your target environment is Lua 5.1, leave both of these COMPAT flags unset.
-# If your target environment is Lua 5.0, the USE_COMPAT flag must be set to 1
-# to use the Compat-5.1 module emulation. If you already have Compat-5.1
-# installed in your LUA_PATH and don't want to overwrite it, set INSTALL_COMPAT
-# to a blank value; otherwise, it should be set to 1 if USE_COMPAT is set. See
-# http://www.keplerproject.org/compat/ for more details about Compat-5.1.
-USE_COMPAT =
-INSTALL_COMPAT =
+# OS dependent
+LIB_OPTION= -shared #for Linux
+#LIB_OPTION= -bundle -undefined dynamic_lookup #for MacOS X
 
-# The location of the Lua interpreter and Lua compiler are required to run the
-# test suite and to generate precompiled Lua libraries instead of source Lua
-# libraries for install.
-LUA = /usr/bin/lua
-LUAC = /usr/bin/luac
+LIBNAME= $T.so.$V
+COMPAT_DIR= ../compat/src
 
-# This provides the necessary flags for linking against your OpenSSL libcrypto
-# installation. Change it to suit your system if necessary.
-CRYPTOLIB = -lcrypto
-CRYPTOINC =
+OPENSSL_LIBS= -L/usr/local/openssl/lib -lcrypto -lssl
+OPENSSL_INCS= -I/usr/local/openssl/include
 
-# Set this to lc to install the precompiled Lua libraries (compiled with luac),
-# or to lua to install the source Lua libraries.
-LUATYPE = lc
+# Compilation directives
+WARN= -O2 -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings
+INCS= -I$(LUA_INC) -I$(COMPAT_DIR)
+CFLAGS= $(WARN) $(OPENSSL_INCS) $(INCS)
+CC= gcc
