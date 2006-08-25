@@ -1,5 +1,5 @@
 /*
-** $Id: lcrypto.h,v 1.1 2006-08-22 19:18:42 nezroy Exp $
+** $Id: lcrypto.h,v 1.2 2006-08-25 03:28:32 nezroy Exp $
 ** See Copyright Notice in license.html
 */
 
@@ -7,7 +7,7 @@
 #define _LUACRYPTO_
 
 #ifndef LUACRYPTO_API
-#define LUACRYPTO_API
+#define LUACRYPTO_API   LUA_API
 #endif
 
 #define LUACRYPTO_PREFIX "LuaCrypto: "
