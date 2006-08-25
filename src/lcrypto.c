@@ -1,5 +1,5 @@
 /*
-** $Id: lcrypto.c,v 1.1 2006-08-22 19:18:42 nezroy Exp $
+** $Id: lcrypto.c,v 1.2 2006-08-25 03:24:17 nezroy Exp $
 ** See Copyright Notice in license.html
 */
 
@@ -11,7 +11,9 @@
 
 #include "lua.h"
 #include "lauxlib.h"
+#if ! defined (LUA_VERSION_NUM) || LUA_VERSION_NUM < 501
 #include "compat-5.1.h"
+#endif
 
 #include "lcrypto.h"
 

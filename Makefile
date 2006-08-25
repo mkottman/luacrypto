@@ -4,9 +4,11 @@ CONFIG= ./config
 
 include $(CONFIG)
 
-OBJS= $(COMPAT_DIR)/compat-5.1.o src/$T.o
+ifeq "$(LUA_VERSION_NUM)" "500"
+COMPAT_O= $(COMPAT_DIR)/compat-5.1.o
+endif
+OBJS= src/$T.o $(COMPAT_O)
 SRCS= src/$T.h src/$T.c
-
 
 lib: src/$(LIBNAME)
 
