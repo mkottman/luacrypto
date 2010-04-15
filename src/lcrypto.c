@@ -679,6 +679,18 @@ static int luacrypto_list(lua_State *L) {
   return 1;
 }
 
+static int luacrypto_hex(lua_State *L) {
+  size_t i, len = 0;
+  const unsigned char * input = (unsigned char *) luaL_checklstring(L, 1, &len);
+  char * hex = calloc(sizeof(char), len*2 + 1);
+  for (i = 0; i < len; i++) {
+    sprintf(hex + 2*i, "%02x", input[i]);
+  }
+  lua_pushlstring(L, hex, len*2);
+  free(hex);
+  return 1;
+}
+  
 /*
 ** Create a metatable and leave it on top of the stack.
 */
@@ -733,6 +745,7 @@ static void create_metatables (lua_State *L)
 {
   struct luaL_reg core_functions[] = {
     { "list", luacrypto_list },
+    { "hex", luacrypto_hex },
     { NULL, NULL }
   };
   struct luaL_reg digest_methods[] = {

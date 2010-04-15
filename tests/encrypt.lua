@@ -1,11 +1,19 @@
 function tohex(s)
-	return (s:gsub('.', function (c) return string.format("%02X", string.byte(c)) end))
+	return (s:gsub('.', function (c) return string.format("%02x", string.byte(c)) end))
 end
 function hexprint(s)
-	print(tohex(s))
+	print(crypto.hex(s))
 end
 
 require 'crypto'
+
+-- TESTING HEX
+
+local tst = 'abcd'
+assert(crypto.hex, "missing crypto.hex")
+local actual = crypto.hex(tst)
+local expected = tohex(tst)
+assert(actual == expected, "different hex results")
 
 -- TESTING ENCRYPT
 
@@ -19,7 +27,7 @@ local iv = '1234'
 local res = crypto.encrypt(cipher, text, key, iv)
 assert(type(res) == "string", "wrong result type, expecting string")
 assert(#res % 16 == 0, "unexpected result size") -- aes128 block size is 16bytes
-assert(tohex(res) == "9BAC9A71DD600824706096852E7282DF", "unexpected result")
+assert(crypto.hex(res) == "9bac9a71dd600824706096852e7282df", "unexpected result")
 
 local res2 = crypto.encrypt(cipher, text, key, iv)
 assert(res == res2, "the results are different!")
