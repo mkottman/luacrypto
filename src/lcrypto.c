@@ -205,7 +205,7 @@ static int encrypt_fnew(lua_State *L)
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
   
     size_t iv_len = 0;
-    const unsigned char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
+    const char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
     memcpy(evp_key, key, key_len);
@@ -230,7 +230,7 @@ static int encrypt_update(lua_State *L)
 
   buffer = malloc(input_len + EVP_CIPHER_CTX_block_size(c));
   EVP_EncryptUpdate(c, buffer, &output_len, input, input_len);
-  lua_pushlstring(L, buffer, output_len);
+  lua_pushlstring(L, (char*) buffer, output_len);
   free(buffer);
 
   return 1;
@@ -243,7 +243,7 @@ static int encrypt_final(lua_State *L)
   unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
   
   EVP_EncryptFinal(c, buffer, &output_len);
-  lua_pushlstring(L, buffer, output_len);
+  lua_pushlstring(L, (char*) buffer, output_len);
   return 1;
 }
 
@@ -283,7 +283,7 @@ static int encrypt_fencrypt(lua_State *L)
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
   
     size_t iv_len = 0;
-    const unsigned char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
+    const char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
     memcpy(evp_key, key, key_len);
@@ -338,7 +338,7 @@ static int decrypt_fnew(lua_State *L)
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
   
     size_t iv_len = 0;
-    const unsigned char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
+    const char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
     memcpy(evp_key, key, key_len);
@@ -363,7 +363,7 @@ static int decrypt_update(lua_State *L)
 
   buffer = malloc(input_len + EVP_CIPHER_CTX_block_size(c));
   EVP_DecryptUpdate(c, buffer, &output_len, input, input_len);
-  lua_pushlstring(L, buffer, output_len);
+  lua_pushlstring(L, (char*) buffer, output_len);
   free(buffer);
 
   return 1;
@@ -376,7 +376,7 @@ static int decrypt_final(lua_State *L)
   unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
   
   EVP_DecryptFinal(c, buffer, &output_len);
-  lua_pushlstring(L, buffer, output_len);
+  lua_pushlstring(L, (char*) buffer, output_len);
   return 1;
 }
 
@@ -416,7 +416,7 @@ static int decrypt_fdecrypt(lua_State *L)
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
   
     size_t iv_len = 0;
-    const unsigned char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
+    const char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
     memcpy(evp_key, key, key_len);
@@ -506,7 +506,7 @@ static int hmac_final(lua_State *L)
 {
   HMAC_CTX *c = hmac_pget(L, 1);
   unsigned char digest[EVP_MAX_MD_SIZE];
-  int written = 0;
+  unsigned int written = 0;
   unsigned int i;
   char *hex;
 
