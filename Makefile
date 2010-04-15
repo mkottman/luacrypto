@@ -1,4 +1,4 @@
-T= lcrypto
+T= crypto
 V= 0.2.0
 CONFIG= ./config
 
@@ -7,8 +7,8 @@ include $(CONFIG)
 ifeq "$(LUA_VERSION_NUM)" "500"
 COMPAT_O= $(COMPAT_DIR)/compat-5.1.o
 endif
-OBJS= src/$T.o $(COMPAT_O)
-SRCS= src/$T.h src/$T.c
+OBJS= src/l$T.o $(COMPAT_O)
+SRCS= src/l$T.h src/l$T.c
 
 lib: src/$(LIBNAME)
 
