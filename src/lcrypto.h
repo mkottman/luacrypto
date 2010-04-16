@@ -23,6 +23,7 @@
 */
 #define LUACRYPTO_HMACNAME    "crypto.hmac"
 #define LUACRYPTO_RANDNAME    "crypto.rand"
+#define LUACRYPTO_PKEYNAME    "crypto.pkey"
 
 LUACRYPTO_API int luacrypto_createmeta (lua_State *L, const char *name, const luaL_reg *methods);
 LUACRYPTO_API void luacrypto_setmeta (lua_State *L, const char *name);

@@ -8,6 +8,9 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
+#include <openssl/rsa.h>
+#include <openssl/dsa.h>
+#include <openssl/pem.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -638,6 +641,105 @@ static int rand_cleanup(lua_State *L)
   return 0;
 }
 
+/*************** PKEY API ***************/
+
+static EVP_PKEY **pkey_new(lua_State *L)
+{
+  EVP_PKEY **pkey = lua_newuserdata(L, sizeof(EVP_PKEY*));
+  luaL_getmetatable(L, LUACRYPTO_PKEYNAME);
+  lua_setmetatable(L, -2);
+  return pkey;
+}
+  
+static int pkey_generate(lua_State *L)
+{
+  const char *options[] = {"rsa", "dsa"};
+  int idx = luaL_checkoption(L, 1, NULL, options);
+  int key_len = luaL_checkinteger(L, 2);
+  EVP_PKEY **pkey = pkey_new(L);
+  if (idx==0) {
+    RSA *rsa = RSA_generate_key(key_len, RSA_F4, NULL, NULL);
+    if (!rsa)
+      return crypto_error(L);
+    
+    *pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_RSA(*pkey, rsa);
+    return 1;
+  } else {
+    DSA *dsa = DSA_generate_parameters(key_len, NULL, 0, NULL, NULL, NULL, NULL);
+    if (!DSA_generate_key(dsa))
+      return crypto_error(L);
+    
+    *pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_DSA(*pkey, dsa);
+    return 1;
+  }
+}
+
+static int pkey_read(lua_State *L)
+{
+  const char *filename = luaL_checkstring(L, 1);
+  int readPrivate = lua_isboolean(L, 2) && lua_toboolean(L, 2);
+  FILE *fp = fopen(filename, "r");
+  EVP_PKEY **pkey = pkey_new(L);
+  
+  if (!fp)
+    luaL_error(L, "File not found: %s", filename);
+  
+  if (readPrivate) {
+    *pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+  } else {
+    *pkey = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
+  }
+  
+  fclose(fp);
+  
+  if (! *pkey)
+    return crypto_error(L);
+  
+  return 1;
+}
+
+static int pkey_write(lua_State *L)
+{
+  EVP_PKEY **pkey = luaL_checkudata(L, 1, LUACRYPTO_PKEYNAME);
+  const char *pubfn = lua_tostring(L, 2);
+  const char *privfn = lua_tostring(L, 3);
+  if (pubfn) {
+    FILE *fp = fopen(pubfn, "w");
+    if (!fp)
+      luaL_error(L, "Unable to write to file: %s", pubfn);
+    if (!PEM_write_PUBKEY(fp, *pkey))
+      return crypto_error(L);
+    fclose(fp);
+  }
+  if (privfn) {
+    FILE *fp = fopen(privfn, "w");
+    if (!fp)
+      luaL_error(L, "Unable to write to file: %s", privfn);
+    if (!PEM_write_PrivateKey(fp, *pkey, NULL, NULL, 0, NULL, NULL))
+      return crypto_error(L);
+    fclose(fp);  
+  }
+  return 0;
+}
+
+static int pkey_gc(lua_State *L)
+{
+  EVP_PKEY **pkey = luaL_checkudata(L, 1, LUACRYPTO_PKEYNAME);
+  EVP_PKEY_free(*pkey);
+  return 0;
+}
+  
+static int pkey_tostring(lua_State *L)
+{
+  EVP_PKEY **pkey = luaL_checkudata(L, 1, LUACRYPTO_PKEYNAME);
+  char buf[60];
+  sprintf(buf, "%s %s %d %p", LUACRYPTO_PKEYNAME, (*pkey)->type == EVP_PKEY_DSA ? "DSA" : "RSA", EVP_PKEY_bits(*pkey), pkey);
+  lua_pushstring(L, buf);
+  return 1;
+}
+/*************** CORE API ***************/
   
 static void list_callback(const OBJ_NAME *obj,void *arg) {
   lua_State *L = (lua_State*) arg;
@@ -768,7 +870,18 @@ static void create_metatables (lua_State *L)
     { "cleanup", rand_cleanup },
     { NULL, NULL }
   };
-
+  struct luaL_reg pkey_functions[] = {
+    { "generate", pkey_generate },
+    { "read", pkey_read },
+    { NULL, NULL }
+  };
+  struct luaL_reg pkey_methods[] = {
+    { "__tostring", pkey_tostring },
+    { "__gc", pkey_gc },
+    { "write", pkey_write },
+    { NULL, NULL }
+  };
+  
   luaL_register (L, LUACRYPTO_CORENAME, core_functions);
   create_call_table(L, "digest", digest_fnew, digest_fdigest);  
   create_call_table(L, "encrypt", encrypt_fnew, encrypt_fencrypt);
@@ -778,9 +891,11 @@ static void create_metatables (lua_State *L)
   luacrypto_createmeta(L, LUACRYPTO_ENCRYPTNAME, encrypt_methods);
   luacrypto_createmeta(L, LUACRYPTO_DECRYPTNAME, decrypt_methods);
   luacrypto_createmeta(L, LUACRYPTO_HMACNAME, hmac_methods);
+  luacrypto_createmeta(L, LUACRYPTO_PKEYNAME, pkey_methods);
 
   luaL_register (L, LUACRYPTO_RANDNAME, rand_functions);
   luaL_register (L, LUACRYPTO_HMACNAME, hmac_functions);
+  luaL_register (L, LUACRYPTO_PKEYNAME, pkey_functions);
   
   lua_pop (L, 3);
 }
