@@ -15,9 +15,9 @@
 #define LUACRYPTO_DIGESTNAME  "crypto.digest"
 #define LUACRYPTO_ENCRYPTNAME "crypto.encrypt"
 #define LUACRYPTO_DECRYPTNAME "crypto.decrypt"
-/* TODO later
 #define LUACRYPTO_SIGNNAME    "crypto.sign"
 #define LUACRYPTO_VERIFYNAME  "crypto.verify"
+/* TODO later
 #define LUACRYPTO_SEALNAME    "crypto.seal"
 #define LUACRYPTO_OPENNAME    "crypto.open"
 */
