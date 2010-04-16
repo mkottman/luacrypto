@@ -4,19 +4,13 @@ CONFIG= ./config
 
 include $(CONFIG)
 
-ifeq "$(LUA_VERSION_NUM)" "500"
-COMPAT_O= $(COMPAT_DIR)/compat-5.1.o
-endif
-OBJS= src/l$T.o $(COMPAT_O)
+OBJS= src/l$T.o
 SRCS= src/l$T.h src/l$T.c
 
 lib: src/$(LIBNAME)
 
 src/$(LIBNAME): $(OBJS)
 	export MACOSX_DEPLOYMENT_TARGET="10.3"; $(CC) $(CFLAGS) $(LIB_OPTION) -o src/$(LIBNAME) $(OBJS) $(OPENSSL_LIBS)
-
-$(COMPAT_DIR)/compat-5.1.o: $(COMPAT_DIR)/compat-5.1.c
-	$(CC) -c $(CFLAGS) -o $@ $(COMPAT_DIR)/compat-5.1.c
 
 install: src/$(LIBNAME)
 	mkdir -p $(LUA_LIBDIR)

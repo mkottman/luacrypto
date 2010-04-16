@@ -31,12 +31,6 @@ static int crypto_error(lua_State *L)
 
 /*************** DIGEST API ***************/
 
-static EVP_MD_CTX *digest_pget(lua_State *L, int i)
-{
-  if (luaL_checkudata(L, i, LUACRYPTO_DIGESTNAME) == NULL) luaL_typerror(L, i, LUACRYPTO_DIGESTNAME);
-  return lua_touserdata(L, i);
-}
-
 static EVP_MD_CTX *digest_pnew(lua_State *L)
 {
   EVP_MD_CTX *c = lua_newuserdata(L, sizeof(EVP_MD_CTX));
@@ -63,7 +57,7 @@ static int digest_fnew(lua_State *L)
 
 static int digest_clone(lua_State *L)
 {
-  EVP_MD_CTX *c = digest_pget(L, 1);
+  EVP_MD_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   EVP_MD_CTX *d = digest_pnew(L);
   EVP_MD_CTX_init(d);
   EVP_MD_CTX_copy_ex(d, c);
@@ -72,7 +66,7 @@ static int digest_clone(lua_State *L)
 
 static int digest_reset(lua_State *L)
 {
-  EVP_MD_CTX *c = digest_pget(L, 1);
+  EVP_MD_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   const EVP_MD *t = EVP_MD_CTX_md(c);
   EVP_MD_CTX_cleanup(c);
   EVP_MD_CTX_init(c);
@@ -82,7 +76,7 @@ static int digest_reset(lua_State *L)
 
 static int digest_update(lua_State *L)
 {
-  EVP_MD_CTX *c = digest_pget(L, 1);
+  EVP_MD_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   const char *s = luaL_checkstring(L, 2);
   
   EVP_DigestUpdate(c, s, lua_strlen(L, 2));
@@ -93,7 +87,7 @@ static int digest_update(lua_State *L)
 
 static int digest_final(lua_State *L) 
 {
-  EVP_MD_CTX *c = digest_pget(L, 1);
+  EVP_MD_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   EVP_MD_CTX *d = NULL;
   unsigned char digest[EVP_MAX_MD_SIZE];
   unsigned int written = 0;
@@ -127,7 +121,7 @@ static int digest_final(lua_State *L)
 
 static int digest_tostring(lua_State *L)
 {
-  EVP_MD_CTX *c = digest_pget(L, 1);
+  EVP_MD_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   char s[64];
   sprintf(s, "%s %p", LUACRYPTO_DIGESTNAME, (void *)c);
   lua_pushstring(L, s);
@@ -136,7 +130,7 @@ static int digest_tostring(lua_State *L)
 
 static int digest_gc(lua_State *L)
 {
-  EVP_MD_CTX *c = digest_pget(L, 1);
+  EVP_MD_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   EVP_MD_CTX_cleanup(c);
   return 1;
 }
@@ -178,12 +172,6 @@ static int digest_fdigest(lua_State *L)
 
 /*************** ENCRYPT API ***************/
 
-static EVP_CIPHER_CTX *encrypt_pget(lua_State *L, int i)
-{
-  if (luaL_checkudata(L, i, LUACRYPTO_ENCRYPTNAME) == NULL) luaL_typerror(L, i, LUACRYPTO_ENCRYPTNAME);
-  return lua_touserdata(L, i);
-}
-
 static EVP_CIPHER_CTX *encrypt_pnew(lua_State *L)
 {
   EVP_CIPHER_CTX *c = lua_newuserdata(L, sizeof(EVP_CIPHER_CTX));
@@ -197,7 +185,7 @@ static int encrypt_fnew(lua_State *L)
   const char *s = luaL_checkstring(L, 1);
   const EVP_CIPHER *cipher = EVP_get_cipherbyname(s);
   if (cipher == NULL) {
-    luaL_argerror(L, 1, "invalid digest/cipher type");
+    luaL_argerror(L, 1, "invalid encrypt cipher");
     return 0;
   } else {
     size_t key_len = 0;
@@ -222,7 +210,7 @@ static int encrypt_fnew(lua_State *L)
 
 static int encrypt_update(lua_State *L)
 {
-  EVP_CIPHER_CTX *c = encrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_ENCRYPTNAME);
   size_t input_len = 0;
   const unsigned char *input = (unsigned char *) luaL_checklstring(L, 2, &input_len);
   int output_len = 0;
@@ -238,7 +226,7 @@ static int encrypt_update(lua_State *L)
 
 static int encrypt_final(lua_State *L) 
 {
-  EVP_CIPHER_CTX *c = encrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_ENCRYPTNAME);
   int output_len = 0;
   unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
   
@@ -249,7 +237,7 @@ static int encrypt_final(lua_State *L)
 
 static int encrypt_tostring(lua_State *L)
 {
-  EVP_CIPHER_CTX *c = encrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_ENCRYPTNAME);
   char s[64];
   sprintf(s, "%s %p", LUACRYPTO_ENCRYPTNAME, (void *)c);
   lua_pushstring(L, s);
@@ -258,7 +246,7 @@ static int encrypt_tostring(lua_State *L)
 
 static int encrypt_gc(lua_State *L)
 {
-  EVP_CIPHER_CTX *c = encrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_ENCRYPTNAME);
   EVP_CIPHER_CTX_cleanup(c);
   return 1;
 }
@@ -311,12 +299,6 @@ static int encrypt_fencrypt(lua_State *L)
 
 /*************** DECRYPT API ***************/
 
-static EVP_CIPHER_CTX *decrypt_pget(lua_State *L, int i)
-{
-  if (luaL_checkudata(L, i, LUACRYPTO_DECRYPTNAME) == NULL) luaL_typerror(L, i, LUACRYPTO_DECRYPTNAME);
-  return lua_touserdata(L, i);
-}
-
 static EVP_CIPHER_CTX *decrypt_pnew(lua_State *L)
 {
   EVP_CIPHER_CTX *c = lua_newuserdata(L, sizeof(EVP_CIPHER_CTX));
@@ -355,7 +337,7 @@ static int decrypt_fnew(lua_State *L)
 
 static int decrypt_update(lua_State *L)
 {
-  EVP_CIPHER_CTX *c = decrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DECRYPTNAME);
   size_t input_len = 0;
   const unsigned char *input = (unsigned char *) luaL_checklstring(L, 2, &input_len);
   int output_len = 0;
@@ -371,7 +353,7 @@ static int decrypt_update(lua_State *L)
 
 static int decrypt_final(lua_State *L) 
 {
-  EVP_CIPHER_CTX *c = decrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DECRYPTNAME);
   int output_len = 0;
   unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
   
@@ -382,7 +364,7 @@ static int decrypt_final(lua_State *L)
 
 static int decrypt_tostring(lua_State *L)
 {
-  EVP_CIPHER_CTX *c = decrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DECRYPTNAME);
   char s[64];
   sprintf(s, "%s %p", LUACRYPTO_DECRYPTNAME, (void *)c);
   lua_pushstring(L, s);
@@ -391,7 +373,7 @@ static int decrypt_tostring(lua_State *L)
 
 static int decrypt_gc(lua_State *L)
 {
-  EVP_CIPHER_CTX *c = decrypt_pget(L, 1);
+  EVP_CIPHER_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_DECRYPTNAME);
   EVP_CIPHER_CTX_cleanup(c);
   return 1;
 }
@@ -443,12 +425,6 @@ static int decrypt_fdecrypt(lua_State *L)
 }
 
 /*************** HMAC API ***************/
-    
-static HMAC_CTX *hmac_pget(lua_State *L, int i)
-{
- if (luaL_checkudata(L, i, LUACRYPTO_HMACNAME) == NULL) luaL_typerror(L, i, LUACRYPTO_HMACNAME);
- return lua_touserdata(L, i);
-}
 
 static HMAC_CTX *hmac_pnew(lua_State *L)
 {
@@ -478,7 +454,7 @@ static int hmac_fnew(lua_State *L)
 
 static int hmac_clone(lua_State *L)
 {
- HMAC_CTX *c = hmac_pget(L, 1);
+ HMAC_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
  HMAC_CTX *d = hmac_pnew(L);
  *d = *c;
  return 1;
@@ -486,14 +462,14 @@ static int hmac_clone(lua_State *L)
 
 static int hmac_reset(lua_State *L)
 {
-  HMAC_CTX *c = hmac_pget(L, 1);
+  HMAC_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
   HMAC_Init_ex(c, NULL, 0, NULL, NULL);
   return 0;
 }
 
 static int hmac_update(lua_State *L)
 {
-  HMAC_CTX *c = hmac_pget(L, 1);
+  HMAC_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
   const char *s = luaL_checkstring(L, 2);
 
   HMAC_Update(c, (unsigned char *)s, lua_strlen(L, 2));
@@ -504,7 +480,7 @@ static int hmac_update(lua_State *L)
 
 static int hmac_final(lua_State *L)
 {
-  HMAC_CTX *c = hmac_pget(L, 1);
+  HMAC_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
   unsigned char digest[EVP_MAX_MD_SIZE];
   unsigned int written = 0;
   unsigned int i;
@@ -534,7 +510,7 @@ static int hmac_final(lua_State *L)
 
 static int hmac_tostring(lua_State *L)
 {
-  HMAC_CTX *c = hmac_pget(L, 1);
+  HMAC_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
   char s[64];
   sprintf(s, "%s %p", LUACRYPTO_HMACNAME, (void *)c);
   lua_pushstring(L, s);
@@ -543,7 +519,7 @@ static int hmac_tostring(lua_State *L)
 
 static int hmac_gc(lua_State *L)
 {
-  HMAC_CTX *c = hmac_pget(L, 1);
+  HMAC_CTX *c = luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
   HMAC_CTX_cleanup(c);
   return 1;
 }
