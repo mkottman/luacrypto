@@ -1,13 +1,10 @@
-#!/usr/local/bin/lua50
-
 --[[
 -- $Id: test.lua,v 1.3 2006/08/25 03:24:17 nezroy Exp $
 -- See Copyright Notice in license.html
 --]]
 
 require("crypto")
-require("repr")
-print(repr(crypto))
+
 local digest = crypto.digest
 local hmac = crypto.hmac
 
