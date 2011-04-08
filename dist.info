@@ -1,0 +1,15 @@
+--- This file is part of LuaDist project
+
+name = "luacrypto"
+version = "0.2.0"
+
+desc = "LuaCrypto provides a Lua frontend to the OpenSSL cryptographic library."
+author = "Keith Howe"
+license = "MIT"
+url = "http://luacrypto.luaforge.net/"
+maintainer = "Peter Kapec"
+
+depends = {
+	"lua ~> 5.1",
+	"openssl >=0.9.7"
+}
