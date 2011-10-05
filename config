@@ -18,5 +18,5 @@ OPENSSL_INCS= -I/usr/include/openssl
 # Compilation directives
 WARN= -O2 -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings
 INCS= -I$(LUA_INC)
-CFLAGS= -shared $(WARN) $(OPENSSL_INCS) $(INCS)  -llua5.1
+CFLAGS= -shared $(WARN) $(OPENSSL_INCS) $(INCS)
 CC= gcc

@@ -15,7 +15,6 @@ src/$(LIBNAME): $(OBJS)
 install: src/$(LIBNAME)
 	mkdir -p $(LUA_LIBDIR)
 	cp src/$(LIBNAME) $(LUA_LIBDIR)
-	cd $(LUA_LIBDIR); ln -f -s $(LIBNAME) $T.so
 
 clean:
 	rm -f src/$(LIBNAME) $(OBJS) $(COMPAT_O)
