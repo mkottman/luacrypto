@@ -11,6 +11,12 @@
 #include <openssl/rsa.h>
 #include <openssl/dsa.h>
 #include <openssl/pem.h>
+#include <stddef.h>
+
+
+#ifndef MIN
+# define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
 
 #ifdef __cplusplus
 #include "lua.hpp"
@@ -1104,7 +1110,7 @@ static int seal_fseal(lua_State* L)
 
 	while(message_length > 0) {
 		char* temp = luaL_prepbuffer(&buffer);
-		int sz = min(LUAL_BUFFERSIZE - block_size - 1, message_length);
+		int sz = MIN(LUAL_BUFFERSIZE - block_size - 1, message_length);
 		int output_length;
 
 		if(!EVP_SealUpdate(&ctx, (unsigned char*)temp, &output_length, message, sz)) {
@@ -1253,7 +1259,7 @@ static int open_update(lua_State* L)
 	while(input_len > 0) {
 		int output_length;
 		unsigned char* temp = (unsigned char*)luaL_prepbuffer(&buffer);
-		size_t sz = min(LUAL_BUFFERSIZE - 1, input_len);
+		size_t sz = MIN(LUAL_BUFFERSIZE - 1, input_len);
 		if(!EVP_OpenUpdate(c->ctx, temp, &output_length, input, sz)) {
 			return crypto_error(L);
 		}
@@ -1342,7 +1348,7 @@ static int open_fopen(lua_State* L)
 	while(data_length > 0) {
 		int output_length;
 		unsigned char* temp = (unsigned char*)luaL_prepbuffer(&buffer);
-		size_t sz = min(LUAL_BUFFERSIZE - 1, data_length);
+		size_t sz = MIN(LUAL_BUFFERSIZE - 1, data_length);
 		if(!EVP_OpenUpdate(&ctx, temp, &output_length, data, sz)) {
 			free(encrypted_key);
 			EVP_CIPHER_CTX_cleanup(&ctx);
