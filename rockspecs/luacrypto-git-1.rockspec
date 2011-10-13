@@ -4,14 +4,14 @@ description = {
 	summary = "A Lua frontend to OpenSSL",
 	detailed = [[LuaCrypto is a Lua frontend to the OpenSSL cryptographic library. The OpenSSL features that are currently exposed are: 
 digests (MD5, SHA-1, HMAC, and more), encryption, decryption and crypto-grade random number generators.]],
-	homepage = "http://git.inconcert/lua-libraries/luacrypto/",
+	homepage = "http://mkottman.github.com/luacrypto/",
 	license = "MIT",
 }
 dependencies = {
 	"lua >= 5.1",
 }
 source = {
-	url = [[git://git.inconcert/lua-libraries/luacrypto.git]],
+	url = [[git://github.com/mkottman/luacrypto.git]],
 	dir = "luacrypto"
 }
 build = {
