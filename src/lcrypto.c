@@ -207,14 +207,25 @@ static int encrypt_fnew(lua_State *L)
     size_t key_len = 0;
     const char *key = luaL_checklstring(L, 2, &key_len);
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+
+    if (lua_objlen(L, 2) <= EVP_MAX_KEY_LENGTH) {
+      memcpy(evp_key, key, key_len);
+    } else {
+      luaL_argerror(L, 2, "wrong key length");
+      return 0;
+    }
   
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
-    memcpy(evp_key, key, key_len);
     if (iv) {
-      memcpy(evp_iv, iv, iv_len);      
+      if (lua_objlen(L, 3) <= (size_t)EVP_CIPHER_iv_length(cipher)) {
+        memcpy(evp_iv, iv, iv_len);
+      } else {
+        luaL_argerror(L, 5, "wrong iv length");
+        return 0;
+      }
     }
     
     EVP_CIPHER_CTX *c = encrypt_pnew(L);
@@ -285,14 +296,25 @@ static int encrypt_fencrypt(lua_State *L)
     size_t key_len = 0;
     const char *key = luaL_checklstring(L, 4, &key_len);
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+
+    if (lua_objlen(L, 4) <= EVP_MAX_KEY_LENGTH) {
+      memcpy(evp_key, key, key_len);
+    } else {
+      luaL_argerror(L, 4, "wrong key length");
+      return 0;
+    }
   
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
-    memcpy(evp_key, key, key_len);
     if (iv) {
-      memcpy(evp_iv, iv, iv_len);      
+      if (lua_objlen(L, 5) <= (size_t)EVP_CIPHER_iv_length(type)) {
+        memcpy(evp_iv, iv, iv_len);
+      } else {
+        luaL_argerror(L, 5, "wrong iv length");
+        return 0;
+      }
     }
   
     int output_len = 0;
@@ -334,14 +356,25 @@ static int decrypt_fnew(lua_State *L)
     size_t key_len = 0;
     const char *key = luaL_checklstring(L, 2, &key_len);
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+
+    if (lua_objlen(L, 2) <= EVP_MAX_KEY_LENGTH) {
+      memcpy(evp_key, key, key_len);
+    } else {
+      luaL_argerror(L, 2, "wrong key length");
+      return 0;
+    }
   
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
-    memcpy(evp_key, key, key_len);
     if (iv) {
-      memcpy(evp_iv, iv, iv_len);      
+      if (lua_objlen(L, 3) <= (size_t)EVP_CIPHER_iv_length(cipher)) {
+        memcpy(evp_iv, iv, iv_len);
+      } else {
+        luaL_argerror(L, 3, "wrong iv length");
+        return 0;
+      }
     }
     
     EVP_CIPHER_CTX *c = decrypt_pnew(L);
@@ -412,14 +445,26 @@ static int decrypt_fdecrypt(lua_State *L)
     size_t key_len = 0;
     const char *key = luaL_checklstring(L, 4, &key_len);
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+
+    if (lua_objlen(L, 4) <= EVP_MAX_KEY_LENGTH) {
+      memcpy(evp_key, key, key_len);
+    } else {
+      luaL_argerror(L, 4, "wrong key length");
+      return 0;
+    }
+
   
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
   
-    memcpy(evp_key, key, key_len);
     if (iv) {
-      memcpy(evp_iv, iv, iv_len);      
+      if (lua_objlen(L, 5) <= (size_t)EVP_CIPHER_iv_length(type)) {
+        memcpy(evp_iv, iv, iv_len);
+      } else {
+        luaL_argerror(L, 5, "wrong iv length");
+        return 0;
+      }
     }
   
     int output_len = 0;
@@ -427,11 +472,19 @@ static int decrypt_fdecrypt(lua_State *L)
     unsigned char *buffer = NULL;
     
     EVP_CIPHER_CTX_init(&c);
-    EVP_DecryptInit_ex(&c, type, NULL, evp_key, iv ? evp_iv : NULL);
+    if(!EVP_DecryptInit_ex(&c, type, NULL, evp_key, iv ? evp_iv : NULL)) {
+      return crypto_error(L);
+    }
     buffer = (unsigned char *)malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
-	EVP_DecryptUpdate(&c, buffer, &len, input, input_len);
+    if(!EVP_DecryptUpdate(&c, buffer, &len, input, input_len)) {
+      free(buffer);
+      return crypto_error(L);
+    }
     output_len += len;
-	EVP_DecryptFinal(&c, &buffer[len], &len);
+    if(!EVP_DecryptFinal(&c, &buffer[len], &len)) {
+      free(buffer);
+      return crypto_error(L);
+    }
     output_len += len;
     
     lua_pushlstring(L, (char*) buffer, output_len);
