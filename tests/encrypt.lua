@@ -58,3 +58,44 @@ local p2 = ctx:final()
 local dec2 = p1 .. p2
 
 assert(dec2 == text, "different partial result")
+
+-- Testing errors when decrypting
+local ctx, err = crypto.decrypt("aes128", res, key.."improper key", iv)
+assert(not ctx and err, "should have failed")
+
+-- wrong iv, will result in garbage
+local ctx, err = crypto.decrypt("aes128", res, key, iv .. "foo")
+assert(ctx ~= text, "should have failed")
+
+local ctx, err = crypto.decrypt("aes128", res .. "foo", key, iv)
+assert(not ctx and err, "should have failed")
+
+-- don't crash on an invalid iv
+local ok, ctx, err = pcall(crypto.decrypt, "aes128", res, key, iv .. "123456123456123456")
+assert(not ok and ctx, "should have failed")
+local ok, ctx = pcall(crypto.decrypt.new, "aes128", key, iv .. "123456123456123456")
+assert(not ok and ctx, "should have failed")
+
+-- don't crash on an invalid key
+local ok, ctx, err = pcall(crypto.decrypt, "aes128", res, string.rep(key, 100), iv)
+assert(not ok and ctx, "should have failed")
+local ok, ctx = pcall(crypto.decrypt.new, "aes128", string.rep(key, 100), iv)
+assert(not ok and ctx, "should have failed")
+
+
+-- Testing errors when encrypting
+
+-- don't crash on an invalid iv
+local ok, res, err = pcall(crypto.encrypt, "aes128", text, key, iv .. "123456123456123456")
+assert(not ok and res)
+local ok, res, err = pcall(crypto.encrypt.new, "aes128", key, iv .. "123456123456123456")
+assert(not ok and res)
+
+-- don't crash on an invalid key
+local ok, res, err = pcall(crypto.encrypt, "aes128", text, string.rep(key, 100), iv)
+assert(not ok and res)
+local ok, res, err = pcall(crypto.encrypt.new, "aes128", string.rep(key, 100), iv)
+assert(not ok and res)
+
+local res = crypto.decrypt("aes128", crypto.encrypt("aes128", "", key, iv), key, iv)
+assert(res == "")
