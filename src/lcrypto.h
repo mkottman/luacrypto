@@ -17,10 +17,10 @@
 #define LUACRYPTO_DECRYPTNAME "crypto.decrypt"
 #define LUACRYPTO_SIGNNAME    "crypto.sign"
 #define LUACRYPTO_VERIFYNAME  "crypto.verify"
-/* TODO later
+
 #define LUACRYPTO_SEALNAME    "crypto.seal"
 #define LUACRYPTO_OPENNAME    "crypto.open"
-*/
+
 #define LUACRYPTO_HMACNAME    "crypto.hmac"
 #define LUACRYPTO_RANDNAME    "crypto.rand"
 #define LUACRYPTO_PKEYNAME    "crypto.pkey"
