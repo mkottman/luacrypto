@@ -59,7 +59,7 @@ static int digest_fnew(lua_State *L)
 {
   const char *s = luaL_checkstring(L, 1);
   const EVP_MD *digest = EVP_get_digestbyname(s);
-  
+
   if (digest == NULL) {
     luaL_argerror(L, 1, "invalid digest/cipher type");
     return 0;
@@ -94,14 +94,14 @@ static int digest_update(lua_State *L)
 {
   EVP_MD_CTX *c = (EVP_MD_CTX*)luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   const char *s = luaL_checkstring(L, 2);
-  
+
   EVP_DigestUpdate(c, s, lua_strlen(L, 2));
-  
+
   lua_settop(L, 1);
   return 1;
 }
 
-static int digest_final(lua_State *L) 
+static int digest_final(lua_State *L)
 {
   EVP_MD_CTX *c = (EVP_MD_CTX*)luaL_checkudata(L, 1, LUACRYPTO_DIGESTNAME);
   EVP_MD_CTX *d = NULL;
@@ -109,18 +109,18 @@ static int digest_final(lua_State *L)
   unsigned int written = 0;
   unsigned int i;
   char *hex;
-  
+
   if (lua_isstring(L, 2))
-  {  
+  {
     const char *s = luaL_checkstring(L, 2);
     EVP_DigestUpdate(c, s, lua_strlen(L, 2));
   }
-  
+
   d = EVP_MD_CTX_create();
   EVP_MD_CTX_copy_ex(d, c);
   EVP_DigestFinal_ex(d, digest, &written);
   EVP_MD_CTX_destroy(d);
-  
+
   if (lua_toboolean(L, 3))
     lua_pushlstring(L, (char *)digest, written);
   else
@@ -131,7 +131,7 @@ static int digest_final(lua_State *L)
     lua_pushlstring(L, hex, written*2);
     free(hex);
   }
-  
+
   return 1;
 }
 
@@ -161,17 +161,17 @@ static int digest_fdigest(lua_State *L)
   unsigned int written = 0;
   unsigned int i;
   char *hex;
-  
+
   if (type == NULL) {
     luaL_argerror(L, 1, "invalid digest type");
     return 0;
   }
-  
+
   c = EVP_MD_CTX_create();
   EVP_DigestInit_ex(c, type, NULL);
   EVP_DigestUpdate(c, s, lua_strlen(L, 3));
   EVP_DigestFinal_ex(c, digest, &written);
-  
+
   if (lua_toboolean(L, 4))
     lua_pushlstring(L, (char *)digest, written);
   else
@@ -182,7 +182,7 @@ static int digest_fdigest(lua_State *L)
     lua_pushlstring(L, hex, written*2);
     free(hex);
   }
-  
+
   return 1;
 }
 
@@ -214,11 +214,11 @@ static int encrypt_fnew(lua_State *L)
       luaL_argerror(L, 2, "wrong key length");
       return 0;
     }
-  
+
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
-  
+
     if (iv) {
       if (lua_objlen(L, 3) <= (size_t)EVP_CIPHER_iv_length(cipher)) {
         memcpy(evp_iv, iv, iv_len);
@@ -227,7 +227,7 @@ static int encrypt_fnew(lua_State *L)
         return 0;
       }
     }
-    
+
     EVP_CIPHER_CTX *c = encrypt_pnew(L);
     EVP_CIPHER_CTX_init(c);
     EVP_EncryptInit_ex(c, cipher, NULL, evp_key, iv ? evp_iv : NULL);
@@ -251,12 +251,12 @@ static int encrypt_update(lua_State *L)
   return 1;
 }
 
-static int encrypt_final(lua_State *L) 
+static int encrypt_final(lua_State *L)
 {
   EVP_CIPHER_CTX *c = (EVP_CIPHER_CTX*)luaL_checkudata(L, 1, LUACRYPTO_ENCRYPTNAME);
   int output_len = 0;
   unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
-  
+
   EVP_EncryptFinal(c, buffer, &output_len);
   lua_pushlstring(L, (char*) buffer, output_len);
   return 1;
@@ -289,10 +289,10 @@ static int encrypt_fencrypt(lua_State *L)
     return 0;
   } else {
     EVP_CIPHER_CTX c;
-  
+
     size_t input_len = 0;
     const unsigned char *input = (unsigned char *) luaL_checklstring(L, 3, &input_len);
-  
+
     size_t key_len = 0;
     const char *key = luaL_checklstring(L, 4, &key_len);
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
@@ -303,11 +303,11 @@ static int encrypt_fencrypt(lua_State *L)
       luaL_argerror(L, 4, "wrong key length");
       return 0;
     }
-  
+
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
-  
+
     if (iv) {
       if (lua_objlen(L, 5) <= (size_t)EVP_CIPHER_iv_length(type)) {
         memcpy(evp_iv, iv, iv_len);
@@ -316,11 +316,11 @@ static int encrypt_fencrypt(lua_State *L)
         return 0;
       }
     }
-  
+
     int output_len = 0;
     int len = 0;
     unsigned char *buffer = NULL;
-    
+
     EVP_CIPHER_CTX_init(&c);
     EVP_EncryptInit_ex(&c, type, NULL, evp_key, iv ? evp_iv : NULL);
     buffer = (unsigned char*)malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
@@ -328,7 +328,7 @@ static int encrypt_fencrypt(lua_State *L)
     output_len += len;
     EVP_EncryptFinal(&c, &buffer[len], &len);
     output_len += len;
-    
+
     lua_pushlstring(L, (char*) buffer, output_len);
     free(buffer);
     return 1;
@@ -363,11 +363,11 @@ static int decrypt_fnew(lua_State *L)
       luaL_argerror(L, 2, "wrong key length");
       return 0;
     }
-  
+
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 3, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
-  
+
     if (iv) {
       if (lua_objlen(L, 3) <= (size_t)EVP_CIPHER_iv_length(cipher)) {
         memcpy(evp_iv, iv, iv_len);
@@ -376,7 +376,7 @@ static int decrypt_fnew(lua_State *L)
         return 0;
       }
     }
-    
+
     EVP_CIPHER_CTX *c = decrypt_pnew(L);
     EVP_CIPHER_CTX_init(c);
     EVP_DecryptInit_ex(c, cipher, NULL, evp_key, iv ? evp_iv : NULL);
@@ -400,12 +400,12 @@ static int decrypt_update(lua_State *L)
   return 1;
 }
 
-static int decrypt_final(lua_State *L) 
+static int decrypt_final(lua_State *L)
 {
   EVP_CIPHER_CTX *c = (EVP_CIPHER_CTX*)luaL_checkudata(L, 1, LUACRYPTO_DECRYPTNAME);
   int output_len = 0;
   unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
-  
+
   EVP_DecryptFinal(c, buffer, &output_len);
   lua_pushlstring(L, (char*) buffer, output_len);
   return 1;
@@ -438,10 +438,10 @@ static int decrypt_fdecrypt(lua_State *L)
     return 0;
   } else {
     EVP_CIPHER_CTX c;
-  
+
     size_t input_len = 0;
     const unsigned char *input = (unsigned char *) luaL_checklstring(L, 3, &input_len);
-  
+
     size_t key_len = 0;
     const char *key = luaL_checklstring(L, 4, &key_len);
     unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
@@ -453,11 +453,11 @@ static int decrypt_fdecrypt(lua_State *L)
       return 0;
     }
 
-  
+
     size_t iv_len = 0;
     const char *iv = lua_tolstring(L, 5, &iv_len); /* can be NULL */
     unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
-  
+
     if (iv) {
       if (lua_objlen(L, 5) <= (size_t)EVP_CIPHER_iv_length(type)) {
         memcpy(evp_iv, iv, iv_len);
@@ -466,11 +466,11 @@ static int decrypt_fdecrypt(lua_State *L)
         return 0;
       }
     }
-  
+
     int output_len = 0;
     int len = 0;
     unsigned char *buffer = NULL;
-    
+
     EVP_CIPHER_CTX_init(&c);
     if(!EVP_DecryptInit_ex(&c, type, NULL, evp_key, iv ? evp_iv : NULL)) {
       return crypto_error(L);
@@ -486,7 +486,7 @@ static int decrypt_fdecrypt(lua_State *L)
       return crypto_error(L);
     }
     output_len += len;
-    
+
     lua_pushlstring(L, (char*) buffer, output_len);
     free(buffer);
     return 1;
@@ -664,13 +664,13 @@ static int sign_update(lua_State *L)
   return 0;
 }
 
-static int sign_final(lua_State *L) 
+static int sign_final(lua_State *L)
 {
   EVP_MD_CTX *c = (EVP_MD_CTX*)luaL_checkudata(L, 1, LUACRYPTO_SIGNNAME);
   unsigned int output_len = 0;
   unsigned char *buffer;
   EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 2, LUACRYPTO_PKEYNAME);
-  
+
   buffer = (unsigned char*)malloc(EVP_PKEY_size(*pkey));
   if (!EVP_SignFinal(c, buffer, &output_len, *pkey)) {
     free(buffer);
@@ -678,7 +678,7 @@ static int sign_final(lua_State *L)
   }
   lua_pushlstring(L, (char*) buffer, output_len);
   free(buffer);
-  
+
   return 1;
 }
 
@@ -714,7 +714,7 @@ static int sign_fsign(lua_State *L)
     unsigned int output_len = 0;
     unsigned char *buffer = NULL;
     EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 4, LUACRYPTO_PKEYNAME);
-   
+
     EVP_MD_CTX_init(&c);
     EVP_SignInit_ex(&c, type, NULL);
     buffer = (unsigned char*)malloc(EVP_PKEY_size(*pkey));
@@ -765,7 +765,7 @@ static int verify_update(lua_State *L)
   return 0;
 }
 
-static int verify_final(lua_State *L) 
+static int verify_final(lua_State *L)
 {
   EVP_MD_CTX *c = (EVP_MD_CTX*)luaL_checkudata(L, 1, LUACRYPTO_VERIFYNAME);
   size_t sig_len = 0;
@@ -777,7 +777,7 @@ static int verify_final(lua_State *L)
   if (ret == -1)
     return crypto_error(L);
 
-  lua_pushboolean(L, ret);  
+  lua_pushboolean(L, ret);
   return 1;
 }
 
@@ -913,7 +913,7 @@ static EVP_PKEY **pkey_new(lua_State *L)
   lua_setmetatable(L, -2);
   return pkey;
 }
-  
+
 static int pkey_generate(lua_State *L)
 {
   const char *options[] = {"rsa", "dsa"};
@@ -924,7 +924,7 @@ static int pkey_generate(lua_State *L)
     RSA *rsa = RSA_generate_key(key_len, RSA_F4, NULL, NULL);
     if (!rsa)
       return crypto_error(L);
-    
+
     *pkey = EVP_PKEY_new();
     EVP_PKEY_assign_RSA(*pkey, rsa);
     return 1;
@@ -932,7 +932,7 @@ static int pkey_generate(lua_State *L)
     DSA *dsa = DSA_generate_parameters(key_len, NULL, 0, NULL, NULL, NULL, NULL);
     if (!DSA_generate_key(dsa))
       return crypto_error(L);
-    
+
     *pkey = EVP_PKEY_new();
     EVP_PKEY_assign_DSA(*pkey, dsa);
     return 1;
@@ -945,21 +945,21 @@ static int pkey_read(lua_State *L)
   int readPrivate = lua_isboolean(L, 2) && lua_toboolean(L, 2);
   FILE *fp = fopen(filename, "r");
   EVP_PKEY **pkey = pkey_new(L);
-  
+
   if (!fp)
     luaL_error(L, "File not found: %s", filename);
-  
+
   if (readPrivate) {
     *pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
   } else {
     *pkey = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
   }
-  
+
   fclose(fp);
-  
+
   if (! *pkey)
     return crypto_error(L);
-  
+
   return 1;
 }
 
@@ -982,7 +982,7 @@ static int pkey_write(lua_State *L)
       luaL_error(L, "Unable to write to file: %s", privfn);
     if (!PEM_write_PrivateKey(fp, *pkey, NULL, NULL, 0, NULL, NULL))
       return crypto_error(L);
-    fclose(fp);  
+    fclose(fp);
   }
   return 0;
 }
@@ -993,7 +993,7 @@ static int pkey_gc(lua_State *L)
   EVP_PKEY_free(*pkey);
   return 0;
 }
-  
+
 static int pkey_tostring(lua_State *L)
 {
   EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 1, LUACRYPTO_PKEYNAME);
@@ -1020,7 +1020,7 @@ static seal_context *seal_pnew(lua_State* L)
 
 	memset(c, 0, sizeof(seal_context));
 	c->ctx = (EVP_CIPHER_CTX*)malloc(sizeof(EVP_CIPHER_CTX));
-	
+
 	return c;
 }
 
@@ -1053,7 +1053,7 @@ static int seal_fnew(lua_State* L)
 		luaL_argerror(L, 1, "invalid encrypt cipher");
 		return 0;
 	}
-	
+
 	EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 2, LUACRYPTO_PKEYNAME);
 
 	int npubk = 1;
@@ -1078,13 +1078,13 @@ static int seal_update(lua_State* L)
 	seal_context *c = (seal_context*)luaL_checkudata(L, 1, LUACRYPTO_SEALNAME);
 	size_t input_len = 0;
 	const unsigned char *input = (unsigned char *) luaL_checklstring(L, 2, &input_len);
-	int output_len = 0; 
+	int output_len = 0;
 
 	unsigned char *temp = (unsigned char*)malloc(input_len + EVP_CIPHER_CTX_block_size(c->ctx));
 	EVP_SealUpdate(c->ctx, temp, &output_len, input, input_len);
 	lua_pushlstring(L, (char*) temp, output_len);
 	free(temp);
-	
+
 	return 1;
 }
 
@@ -1099,7 +1099,7 @@ static int seal_final(lua_State* L)
 
 	lua_pushlstring(L, (const char*)c->ek, c->eklen);
 	lua_pushlstring(L, (const char*)c->iv, EVP_CIPHER_iv_length(c->ctx->cipher));
-	
+
 	free(c->ek);
 	c->ek = NULL;
 
@@ -1122,7 +1122,7 @@ static int seal_fseal(lua_State* L)
 
 	const unsigned char* message = (const unsigned char*)luaL_checkstring(L, 3);
 	int message_length = lua_objlen(L, 3);
-	
+
 	EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 4, LUACRYPTO_PKEYNAME);
 
 	unsigned char *ek = (unsigned char*)malloc(EVP_PKEY_size(*pkey) * npubk);
@@ -1171,10 +1171,10 @@ static int seal_fseal(lua_State* L)
 	luaL_pushresult(&buffer);
 	lua_pushlstring(L, (const char*)ek, eklen);
 	lua_pushlstring(L, (const char*)iv, EVP_CIPHER_iv_length(cipher));
-	
+
 	EVP_CIPHER_CTX_cleanup(&ctx);
 	free(ek);
-	
+
 	return 3;
 }
 
@@ -1191,7 +1191,7 @@ static open_context *open_pnew(lua_State* L)
 	open_context *c = (open_context*)lua_newuserdata(L, sizeof(open_context));
 	luaL_getmetatable(L, LUACRYPTO_OPENNAME);
 	lua_setmetatable(L, -2);
-	
+
 	memset(c, 0, sizeof(open_context));
 	c->ctx = (EVP_CIPHER_CTX*)malloc(sizeof(EVP_CIPHER_CTX));
 	c->pkey_ref = LUA_NOREF;
@@ -1220,7 +1220,7 @@ static int open_tostring(lua_State* L)
 	char s[64];
 	sprintf(s, "%s %p %s %s %d %p", LUACRYPTO_OPENNAME, (void *)c, EVP_CIPHER_name(c->cipher),
 		(*pkey)->type == EVP_PKEY_DSA ? "DSA" : "RSA", EVP_PKEY_bits(*pkey), pkey);
-	
+
 	lua_pop(L, 1);
 	lua_pushstring(L, s);
 	return 1;
@@ -1365,7 +1365,7 @@ static int open_fopen(lua_State* L)
 }
 
 /*************** CORE API ***************/
-  
+
 static void list_callback(const OBJ_NAME *obj,void *arg) {
   lua_State *L = (lua_State*) arg;
   int idx = lua_objlen(L, -1);
@@ -1393,17 +1393,17 @@ static int luacrypto_hex(lua_State *L) {
   free(hex);
   return 1;
 }
-  
+
 /*
 ** Create a metatable and leave it on top of the stack.
 */
 LUACRYPTO_API int luacrypto_createmeta (lua_State *L, const char *name, const luaL_reg *methods) {
   if (!luaL_newmetatable (L, name))
     return 0;
-  
+
   /* define methods */
   luaL_openlib (L, NULL, methods, 0);
-  
+
   /* define metamethods */
   lua_pushliteral (L, "__index");
   lua_pushvalue (L, -2);
@@ -1415,7 +1415,7 @@ LUACRYPTO_API int luacrypto_createmeta (lua_State *L, const char *name, const lu
 
   return 1;
 }
-  
+
 
 
 static void create_call_table(lua_State *L, const char *name, lua_CFunction creator, lua_CFunction starter)
@@ -1466,7 +1466,7 @@ static void create_metatables (lua_State *L)
   EVP_METHODS(sign);
   EVP_METHODS(verify);
   EVP_METHODS(seal);
-  EVP_METHODS(open);  
+  EVP_METHODS(open);
   struct luaL_reg hmac_functions[] = {
     { "digest", hmac_fdigest },
     { "new", hmac_fnew },
@@ -1504,7 +1504,7 @@ static void create_metatables (lua_State *L)
     { "write", pkey_write },
     { NULL, NULL }
   };
-  
+
   luaL_register (L, LUACRYPTO_CORENAME, core_functions);
 #define CALLTABLE(n) create_call_table(L, #n, n##_fnew, n##_f##n)
   CALLTABLE(digest);
@@ -1528,7 +1528,7 @@ static void create_metatables (lua_State *L)
   luaL_register (L, LUACRYPTO_RANDNAME, rand_functions);
   luaL_register (L, LUACRYPTO_HMACNAME, hmac_functions);
   luaL_register (L, LUACRYPTO_PKEYNAME, pkey_functions);
-  
+
   lua_pop (L, 3);
 }
 
@@ -1566,7 +1566,7 @@ LUACRYPTO_API int luaopen_crypto(lua_State *L)
 {
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
-  
+
   struct luaL_reg core[] = {
     {NULL, NULL},
   };
