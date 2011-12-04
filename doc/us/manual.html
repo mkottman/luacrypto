@@ -76,7 +76,7 @@
 <h3>Parameters</h3>
 <dl>
     <dt><strong>dtype</strong></dt>
-    <dd>This parameter is always a string naming the hashing algorithm to use for a digest operation. The list of supported algorithms may change with each version of the OpenSSL library. Refer to the <a href="http://www.openssl.org/docs/apps/dgst.html">OpenSSL documentation</a> for a complete and up to date list. As of 0.9.7, the supported types are:
+    <dd>This parameter is a <b>string</b> naming the hashing algorithm to use for a digest operation. The list of supported algorithms may change with each version of the OpenSSL library. Refer to the <a href="http://www.openssl.org/docs/apps/dgst.html">OpenSSL documentation</a> for a complete and up to date list. As of 0.9.7, the supported types are:
     <ul>
         <li>md5</li>
         <li>md4</li>
@@ -89,9 +89,22 @@
     The list of supported hashing algorithms can also be retrieved by using the <code>crypto.list('digests')</code>.
     </dd>
     <dt><strong>cipher</strong></dt>
-    <dd>This parameter is always a string naming the cipher algorithm used by encryption and decryption. The list of supported hashing algorithms can also be retrieved by using the <code>crypto.list('ciphers')</code>.
+    <dd>This parameter is a <b>string</b> naming the cipher algorithm used by encryption and decryption. The list of supported hashing algorithms can also be retrieved by using the <code>crypto.list('ciphers')</code>.
+    </dd>
+    <dt><strong>key</strong></dt>
+    <dd>The <b>string</b> key/password used for encryption/decryption.</dd>
+    </dd>
+    <dt><strong>iv</strong></dt>
+    <dd>An optional <b>string</b> initialization vector for encryption/decryption. It has to be of correct size (usually block size), otherwise the functions return an error.</dd>
+    </dd>
+    <dt><strong>pad</strong></dt>
+    <dd>An optional <b>boolean</b> flag whether padding should be used. The default is true, which means that input of any size can be provided. Returned date may be larger than input string due to the padding. If explicitly set to <b>false</b>, the padding is turned off and the input data size has to be multiple of block length.</dd>
     </dd>
 </dl>
+
+<h3>Error handling</h3>
+
+The functions throw an error when known invalid parameters are passed, such as nonexistent digest/cipher and too large key or initialization vector. Otherwise, the functions return <code>nil, error</code> in case of runtime errors, such as incorrect input size when padding is enabled.
 
 <h3>Message Digest - crypto.digest</h3>
 <dl>
@@ -116,26 +129,26 @@
 
 <h3>Encryption - crypto.encrypt</h3>
 <dl>
-    <dt><strong>crypto.encrypt(cipher, input, key [, iv])</strong></dt>
-    <dd>This function encrypts the the <code>input</code> string and returns the result. The encryption algorithm to use is specified by <code>cipher</code>. Encryption key is specified by the <code>key</code> parameter and is required. The optional <code>iv</code> parameter specifies an optional initialization vector. Returns raw data as string, may be larger than input string due to OpenSSL padding.</dd>
+    <dt><strong>crypto.encrypt(cipher, input, key [, iv[, pad]])</strong></dt>
+    <dd>This function encrypts the the <code>input</code> string and returns the result. The encryption algorithm to use is specified by <code>cipher</code>. Encryption key is specified by the <code>key</code> parameter and is required. The optional <code>iv</code> parameter specifies an optional initialization vector. If boolean <code>pad</code> is specified after <code>iv</code>, it determines whether padding will be used (on by default).</dd>
     
-    <dt><strong>crypto.encrypt.new(cipher, key [, iv])</strong></dt>
-    <dd>Creates a new EVP encryption object using the algorithm specified by <code>cipher</code> and encryption key <code>key</code>. Optionally, initialization vector <code>iv</code> may be specified.</dd>
+    <dt><strong>crypto.encrypt.new(cipher, key [, iv[, pad]])</strong></dt>
+    <dd>Creates a new EVP encryption object using the algorithm specified by <code>cipher</code> and encryption key <code>key</code>. Optionally, initialization vector <code>iv</code> may be specified, followed by <code>pad</code> argument.</dd>
 
     <dt><strong>encrypt:update(string)</strong></dt>
     <dd>Appends the data in <code>string</code> to the current internal data. Returns a string with encrypted data, which may be of zero length if less than a message block size of data is provided.</dd>
     
     <dt><strong>encrypt:final()</strong></dt>
-    <dd>Finishes the encryption, and returns any leftover encrypted data as string if necessarry (due to padding).</dd>
+    <dd>Finishes the encryption, and returns any leftover encrypted data as string if necessary (due to padding).</dd>
 </dl>
 
 <h3>Decryption - crypto.decrypt</h3>
 <dl>
-    <dt><strong>crypto.decrypt(cipher, input, key [, iv])</strong></dt>
-    <dd>This function decrypts the the <code>input</code> string and returns the result. The decryption algorithm to use is specified by <code>cipher</code>. Decryption key is specified by the <code>key</code> parameter and is required. The optional <code>iv</code> parameter specifies an optional initialization vector.</dd>
+    <dt><strong>crypto.decrypt(cipher, input, key [, iv[, pad]])</strong></dt>
+    <dd>This function decrypts the the <code>input</code> string and returns the result. The decryption algorithm to use is specified by <code>cipher</code>. Decryption key is specified by the <code>key</code> parameter and is required. The optional <code>iv</code> parameter specifies an optional initialization vector. If boolean <code>pad</code> is specified after <code>iv</code>, it determines whether padding will be used (on by default).</dd>
     
-    <dt><strong>crypto.decrypt.new(cipher, key [, iv])</strong></dt>
-    <dd>Creates a new EVP decryption object using the algorithm specified by <code>cipher</code> and decryption key <code>key</code>. Optionally, initialization vector <code>iv</code> may be specified.</dd>
+    <dt><strong>crypto.decrypt.new(cipher, key [, iv[, pad]])</strong></dt>
+    <dd>Creates a new EVP decryption object using the algorithm specified by <code>cipher</code> and decryption key <code>key</code>. Initialization vector <code>iv</code> may optionally be specified, followed by <code>pad</code> argument.</dd>
 
     <dt><strong>decrypt:update(string)</strong></dt>
     <dd>Appends the data in <code>string</code> to the current internal data. Returns a string with decrypted data, which may be of zero length if less than a message block size of data is provided.</dd>
