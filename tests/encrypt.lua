@@ -24,7 +24,7 @@ local text = 'Hello world!'
 local key = 'abcd'
 local iv = '1234'
 
-local res = crypto.encrypt(cipher, text, key, iv)
+local res = assert(crypto.encrypt(cipher, text, key, iv))
 assert(type(res) == "string", "wrong result type, expecting string")
 assert(#res % 16 == 0, "unexpected result size") -- aes128 block size is 16bytes
 assert(crypto.hex(res) == "9bac9a71dd600824706096852e7282df", "unexpected result")
@@ -38,8 +38,6 @@ local p1 = ctx:update(text)
 local p2 = ctx:final()
 local res3 = p1 .. p2
 assert(res == res3, "constructed result is different from direct")
-
-hexprint(res)
 
 -- TESTING DECRYPT
 
