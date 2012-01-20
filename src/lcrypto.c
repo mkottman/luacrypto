@@ -969,7 +969,7 @@ static EVP_PKEY **pkey_new(lua_State *L)
 
 static int pkey_generate(lua_State *L)
 {
-  const char *options[] = {"rsa", "dsa"};
+  const char *options[] = {"rsa", "dsa", NULL};
   int idx = luaL_checkoption(L, 1, NULL, options);
   int key_len = luaL_checkinteger(L, 2);
   EVP_PKEY **pkey = pkey_new(L);
@@ -1423,7 +1423,7 @@ static void list_callback(const OBJ_NAME *obj,void *arg)
 static int luacrypto_list(lua_State *L)
 {
   int options[] = {OBJ_NAME_TYPE_CIPHER_METH, OBJ_NAME_TYPE_MD_METH};
-  const char * names[] = {"ciphers", "digests"};
+  const char * names[] = {"ciphers", "digests", NULL};
   int idx = luaL_checkoption (L, 1, NULL, names);
   lua_createtable(L, 0, 0);
   OBJ_NAME_do_all_sorted(options[idx], list_callback, L);
