@@ -18,6 +18,12 @@
 # define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+#ifdef __GNUC__
+#  define UNUSED __attribute__ ((unused))
+#else
+#  define UNUSED
+#endif
+
 #ifdef __cplusplus
 #include "lua.hpp"
 #else
@@ -945,7 +951,7 @@ static int rand_write(lua_State *L)
   return 1;
 }
 
-static int rand_cleanup(lua_State *L __attribute__ ((unused)) )
+static int rand_cleanup(lua_State *L UNUSED )
 {
   RAND_cleanup();
   return 0;
