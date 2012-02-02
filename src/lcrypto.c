@@ -67,17 +67,15 @@ static int digest_fnew(lua_State *L)
   const char *s = luaL_checkstring(L, 1);
   const EVP_MD *digest = EVP_get_digestbyname(s);
 
-  if (digest == NULL) {
-    luaL_argerror(L, 1, "invalid digest/cipher type");
-    return 0;
-  } else {
-    EVP_MD_CTX *c = digest_pnew(L);
-    EVP_MD_CTX_init(c);
-    if (!EVP_DigestInit_ex(c, digest, NULL)) {
+  if (digest == NULL)
+    return luaL_argerror(L, 1, "invalid digest/cipher type");
+
+  EVP_MD_CTX *c = digest_pnew(L);
+  EVP_MD_CTX_init(c);
+  if (EVP_DigestInit_ex(c, digest, NULL) != 1)
       return crypto_error(L);
-    }
-    return 1;
-  }
+
+  return 1;
 }
 
 static int digest_clone(lua_State *L)
@@ -563,10 +561,8 @@ static int hmac_fnew(lua_State *L)
   const char *k = luaL_checkstring(L, 2);
   const EVP_MD *type = EVP_get_digestbyname(s);
 
-  if (type == NULL) {
-    luaL_argerror(L, 1, "invalid digest type");
-    return 0;
-  }
+  if (type == NULL)
+    return luaL_argerror(L, 1, "invalid digest type");
 
   HMAC_CTX_init(c);
   HMAC_Init_ex(c, k, (int)lua_strlen(L, 2), type, NULL);
@@ -694,15 +690,16 @@ static int sign_fnew(lua_State *L)
 {
   const char *s = luaL_checkstring(L, 1);
   const EVP_MD *md = EVP_get_digestbyname(s);
-  if (md == NULL) {
-    luaL_argerror(L, 1, "invalid digest type");
-    return 0;
-  } else {
-    EVP_MD_CTX *c = sign_pnew(L);
-    EVP_MD_CTX_init(c);
-    EVP_SignInit_ex(c, md, NULL);
-    return 1;
-  }
+
+  if (md == NULL)
+    return luaL_argerror(L, 1, "invalid digest type");
+
+  EVP_MD_CTX *c = sign_pnew(L);
+  EVP_MD_CTX_init(c);
+  if (EVP_SignInit_ex(c, md, NULL) != 1)
+    return crypto_error(L);
+
+  return 1;
 }
 
 static int sign_update(lua_State *L)
@@ -797,15 +794,18 @@ static int verify_fnew(lua_State *L)
 {
   const char *s = luaL_checkstring(L, 1);
   const EVP_MD *md = EVP_get_digestbyname(s);
-  if (md == NULL) {
-    luaL_argerror(L, 1, "invalid digest type");
-    return 0;
-  } else {
-    EVP_MD_CTX *c = verify_pnew(L);
-    EVP_MD_CTX_init(c);
-    EVP_VerifyInit_ex(c, md, NULL);
-    return 1;
-  }
+  EVP_MD_CTX *c;
+
+  if (md == NULL)
+    return luaL_argerror(L, 1, "invalid digest type");
+
+  c = verify_pnew(L);
+  EVP_MD_CTX_init(c);
+
+  if (EVP_VerifyInit_ex(c, md, NULL) != 1)
+    return crypto_error(L);
+
+  return 1;
 }
 
 static int verify_update(lua_State *L)
@@ -1150,21 +1150,20 @@ static int seal_fnew(lua_State* L)
 {
   const char *cipher_type = luaL_checkstring(L, 1);
   const EVP_CIPHER *cipher = EVP_get_cipherbyname(cipher_type);
-  if (cipher == NULL) {
-    luaL_argerror(L, 1, "invalid encrypt cipher");
-    return 0;
-  }
+  int npubk = 1;
+
+  if (cipher == NULL)
+    return luaL_argerror(L, 1, "invalid encrypt cipher");
 
   EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 2, LUACRYPTO_PKEYNAME);
-
-  int npubk = 1;
 
   seal_context *seal_ctx = seal_pnew(L);
   EVP_CIPHER_CTX_init(seal_ctx->ctx);
 
   seal_ctx->ek = (unsigned char*)malloc((size_t)EVP_PKEY_size(*pkey) * (size_t)npubk);
 
-  if (!EVP_SealInit(seal_ctx->ctx, cipher, &seal_ctx->ek, &seal_ctx->eklen, seal_ctx->iv, pkey, npubk)) {
+  if (!EVP_SealInit(seal_ctx->ctx, cipher, &seal_ctx->ek, &seal_ctx->eklen,
+                      seal_ctx->iv, pkey, npubk)) {
     free(seal_ctx->ek);
     seal_ctx->ek = NULL;
     return crypto_error(L);
@@ -1328,28 +1327,29 @@ static int open_fnew(lua_State* L)
 {
   const char *type_name = luaL_checkstring(L, 1);
   const EVP_CIPHER *cipher = EVP_get_cipherbyname(type_name);
-  if (cipher == NULL) {
-    luaL_argerror(L, 1, "invalid decrypt cipher");
-    return 0;
-  }
+  const unsigned char* encrypted_key;
+  const unsigned char* iv;
+
+  if (cipher == NULL)
+    return luaL_argerror(L, 1, "invalid decrypt cipher");
 
   EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 2, LUACRYPTO_PKEYNAME);
 
-  const unsigned char* encrypted_key = (const unsigned char*)luaL_checkstring(L, 3); /* checks for the encrypted key */
-  const unsigned char* iv = (const unsigned char*)luaL_checkstring(L, 4); /* checks for the initialization vector */
+  /* checks for the encrypted key */
+  encrypted_key = (const unsigned char*)luaL_checkstring(L, 3);
+  /* checks for the initialization vector */
+  iv = (const unsigned char*)luaL_checkstring(L, 4);
 
-  if ((size_t)EVP_CIPHER_iv_length(cipher) != lua_objlen(L, 4)) {
-    luaL_argerror(L, 4, "invalid iv length");
-    return 0;
-  }
+  if ((size_t)EVP_CIPHER_iv_length(cipher) != lua_objlen(L, 4))
+    return luaL_argerror(L, 4, "invalid iv length");
 
   open_context *open_ctx = open_pnew(L);
   EVP_CIPHER_CTX_init(open_ctx->ctx);
   open_ctx->cipher = (EVP_CIPHER*)cipher;
 
-  if (!EVP_OpenInit(open_ctx->ctx, open_ctx->cipher, encrypted_key, (int)lua_objlen(L, 3), iv, *pkey)) {
+  if (!EVP_OpenInit(open_ctx->ctx, open_ctx->cipher, encrypted_key,
+                      (int)lua_objlen(L, 3), iv, *pkey))
     return crypto_error(L);
-  }
 
   lua_pushvalue(L, 2);
   open_ctx->pkey_ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -1362,7 +1362,6 @@ static int open_update(lua_State* L)
   open_context *c = (open_context*)luaL_checkudata(L, 1, LUACRYPTO_OPENNAME);
   size_t input_len = 0;
   const unsigned char *input = (unsigned char *) luaL_checklstring(L, 2, &input_len);
-// 	int output_len = 0;
 
   luaL_Buffer buffer;
   luaL_buffinit(L, &buffer);
