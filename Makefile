@@ -6,6 +6,7 @@ include $(CONFIG)
 
 OBJS= src/l$T.o
 SRCS= src/l$T.h src/l$T.c
+TESTS=tests/*.lua
 
 lib: src/$(LIBNAME)
 
@@ -18,3 +19,9 @@ install: src/$(LIBNAME)
 
 clean:
 	rm -f src/$(LIBNAME) $(OBJS) $(COMPAT_O)
+
+tests: test
+test: $(TESTS) lib
+	./tests/run-tests
+
+.PHONY: test tests
