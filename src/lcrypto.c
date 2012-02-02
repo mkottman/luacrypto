@@ -266,40 +266,21 @@ static int init_encryptor_decryptor(int (*init_fun)(EVP_CIPHER_CTX*, const EVP_C
                                     lua_State *L, EVP_CIPHER_CTX *c, const EVP_CIPHER* cipher, const char* key, size_t key_len,
                                     const char* iv, size_t iv_len, int pad, int* size_to_return)
 {
+  unsigned char the_key[EVP_MAX_KEY_LENGTH] = {0};
+  unsigned char the_iv[EVP_MAX_IV_LENGTH] = {0};
+
   EVP_CIPHER_CTX_init(c);
   TRY_CTX(init_fun(c, cipher, NULL, NULL, NULL))
+
   if (!pad)
     TRY_CTX(EVP_CIPHER_CTX_set_padding(c, 0))
 
-  const EVP_CIPHER* var_key_ciphers[] = {
-    EVP_rc4(), EVP_rc4_40(),
-    EVP_rc2_ofb(), EVP_rc2_cbc(), EVP_rc2_ecb(), EVP_rc2_cfb(), EVP_rc2_ofb(),
-    EVP_rc2_40_cbc(), EVP_rc2_64_cbc(),
-    EVP_bf_cbc(), EVP_bf_ecb(), EVP_bf_cfb(), EVP_bf_ofb(),
-    EVP_cast5_cbc(), EVP_cast5_ecb(), EVP_cast5_cfb(), EVP_cast5_ofb(),
-//        EVP_rc5_32_12_16_cbc(), EVP_rc5_32_12_16_cfb(), EVP_rc5_32_12_16_ecb(), EVP_rc5_32_12_16_ofb()
-  };
-  unsigned char the_iv[EVP_MAX_IV_LENGTH] = {0};
-  if (iv) {
+  if (iv)
     memcpy(the_iv, iv, iv_len);
-  }
 
-  int is_var_key = 0;
-  size_t i;
-  for (i = 0 ; i < sizeof(var_key_ciphers) / sizeof(*var_key_ciphers) ; ++i) {
-    if (var_key_ciphers[i] == cipher) {
-      is_var_key = 1;
-      break;
-    }
-  }
-  if (is_var_key) {
-    TRY_CTX(EVP_CIPHER_CTX_set_key_length(c, (int)key_len))
-    TRY_CTX(init_fun(c, NULL, NULL, (const unsigned char *)key, iv ? the_iv : NULL))
-  } else {
-    unsigned char the_key[EVP_MAX_KEY_LENGTH] = {0};
-    memcpy(the_key, key, key_len);
-    TRY_CTX(init_fun(c, NULL, NULL, the_key, the_iv))
-  }
+  memcpy(the_key, key, key_len);
+  TRY_CTX(init_fun(c, NULL, NULL, the_key, the_iv))
+
   return 1;
 }
 
