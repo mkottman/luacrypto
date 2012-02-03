@@ -12,6 +12,7 @@
 #include <openssl/dsa.h>
 #include <openssl/pem.h>
 #include <openssl/bio.h>
+#include <openssl/x509.h>
 #include <stddef.h>
 
 
@@ -1491,6 +1492,133 @@ static int luacrypto_hex(lua_State *L)
   return 1;
 }
 
+/*************** x509 API ***************/
+
+static X509 *x509__load_cert(BIO *cert)
+{
+    X509 *x = PEM_read_bio_X509_AUX(cert, NULL, NULL, NULL);
+    return x;
+}
+
+struct x509_ca {
+  X509_STORE *store;
+  STACK_OF(X509) *stack;
+};
+
+static int x509_ca_fnew(lua_State *L)
+{
+  struct x509_ca *x = lua_newuserdata(L, sizeof(struct x509_ca));
+
+  x->store = X509_STORE_new();
+  x->stack = sk_X509_new_null();
+
+  luaL_getmetatable(L, LUACRYPTO_X509_CA_NAME);
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
+static int x509_ca_fx509_ca(lua_State *L)
+{
+  return x509_ca_fnew(L);
+}
+
+static struct x509_ca *x509_ca__get(lua_State *L)
+{
+  return luaL_checkudata(L, 1, LUACRYPTO_X509_CA_NAME);
+}
+
+static int x509_ca_gc(lua_State *L)
+{
+  struct x509_ca *c = x509_ca__get(L);
+  sk_X509_pop_free(c->stack, X509_free);
+  X509_STORE_free(c->store);
+  return 0;
+}
+
+/* verify a cert is signed by the ca */
+static int x509_ca__verify(struct x509_ca *x, X509 *cert)
+{
+  X509_STORE_CTX *csc;
+  int ret = -1;
+
+  csc = X509_STORE_CTX_new();
+  if (csc == NULL)
+    return ret;
+
+  X509_STORE_set_flags(x->store, 0);
+  if(!X509_STORE_CTX_init(csc, x->store, cert, 0))
+    goto out;
+
+  X509_STORE_CTX_trusted_stack(csc, x->stack);
+  ret = X509_verify_cert(csc);
+
+out:
+  X509_STORE_CTX_free(csc);
+  return ret;
+}
+
+/* verify a cert is signed by the ca */
+static X509 *x509_ca__x509_from_string(const char *pem)
+{
+  BIO *mem = BIO_new(BIO_s_mem());
+  X509 *cert;
+  int ret;
+
+  if (!mem)
+    return NULL;
+
+  ret = BIO_puts(mem, pem);
+  if (ret != (int)strlen(pem))
+    goto error;
+
+  cert = x509__load_cert(mem);
+  if (cert == NULL)
+    goto error;
+
+  return cert;
+
+error:
+    BIO_free(mem);
+    return NULL;
+}
+
+static int x509_ca_verify_pem(lua_State *L)
+{
+  struct x509_ca *x = x509_ca__get(L);
+  const char *pem = luaL_checkstring(L, 2);
+  X509 *cert;
+  int ret;
+
+  cert = x509_ca__x509_from_string(pem);
+  if (!cert)
+    return crypto_error(L);
+
+  ret = x509_ca__verify(x, cert);
+  X509_free(cert);
+  if (ret < 0)
+    return crypto_error(L);
+
+  lua_pushboolean(L, ret);
+
+  return 1;
+}
+
+static int x509_ca_add_pem(lua_State *L)
+{
+  struct x509_ca *x = x509_ca__get(L);
+  const char *pem = luaL_checkstring(L, 2);
+  X509 *cert;
+
+  cert = x509_ca__x509_from_string(pem);
+  if (!cert)
+    return crypto_error(L);
+
+  sk_X509_push(x->stack, cert);
+
+  return 0;
+}
+
 /*
 ** Create a metatable and leave it on top of the stack.
 */
@@ -1604,6 +1732,15 @@ static void create_metatables (lua_State *L)
     { "to_pem", pkey_to_pem},
     { NULL, NULL }
   };
+  struct luaL_reg x509_ca_functions[] = {
+    { NULL, NULL }
+  };
+  struct luaL_reg x509_ca_methods[] = {
+    { "__gc", x509_ca_gc },
+    { "add_pem", x509_ca_add_pem },
+    { "verify_pem", x509_ca_verify_pem },
+    { NULL, NULL }
+  };
 
   luaL_register (L, LUACRYPTO_CORENAME, core_functions);
 #define CALLTABLE(n) create_call_table(L, #n, n##_fnew, n##_f##n)
@@ -1614,6 +1751,7 @@ static void create_metatables (lua_State *L)
   CALLTABLE(sign);
   CALLTABLE(seal);
   CALLTABLE(open);
+  CALLTABLE(x509_ca);
 
   luacrypto_createmeta(L, LUACRYPTO_DIGESTNAME, digest_methods);
   luacrypto_createmeta(L, LUACRYPTO_ENCRYPTNAME, encrypt_methods);
@@ -1624,10 +1762,12 @@ static void create_metatables (lua_State *L)
   luacrypto_createmeta(L, LUACRYPTO_PKEYNAME, pkey_methods);
   luacrypto_createmeta(L, LUACRYPTO_SEALNAME, seal_methods);
   luacrypto_createmeta(L, LUACRYPTO_OPENNAME, open_methods);
+  luacrypto_createmeta(L, LUACRYPTO_X509_CA_NAME, x509_ca_methods);
 
   luaL_register (L, LUACRYPTO_RANDNAME, rand_functions);
   luaL_register (L, LUACRYPTO_HMACNAME, hmac_functions);
   luaL_register (L, LUACRYPTO_PKEYNAME, pkey_functions);
+  luaL_register (L, LUACRYPTO_X509_CA_NAME, x509_ca_functions);
 
   lua_pop (L, 3);
 }
