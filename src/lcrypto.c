@@ -1597,7 +1597,9 @@ static int x509_ca_add_pem(lua_State *L)
 
   sk_X509_push(x->stack, cert);
 
-  return 0;
+  lua_pushboolean(L, 1);
+
+  return 1;
 }
 
 /*
