@@ -246,14 +246,14 @@ static int parse_enc_params(lua_State *L, EVP_CIPHER** cipher, char** key, size_
   return 1;
 }
 
-static inline int parse_new_enc_params(lua_State *L, EVP_CIPHER** cipher, char** key, size_t *key_len,
+static int parse_new_enc_params(lua_State *L, EVP_CIPHER** cipher, char** key, size_t *key_len,
                                        char** iv, size_t* iv_len, int* pad, int* size_to_return)
 {
   return parse_enc_params(L, cipher, key, key_len, iv, iv_len, pad, size_to_return,
                           1, 2, 3, 4);
 }
 
-static inline int parse_f_enc_params(lua_State *L, EVP_CIPHER** cipher, char** key, size_t *key_len,
+static int parse_f_enc_params(lua_State *L, EVP_CIPHER** cipher, char** key, size_t *key_len,
                                      char** iv, size_t* iv_len, int* pad, int* size_to_return)
 {
   return parse_enc_params(L, cipher, key, key_len, iv, iv_len, pad, size_to_return,
