@@ -31,3 +31,6 @@ install_test ( tests/ )
 
 add_lua_test ( tests/test.lua )  #FIX: arg[1]
 add_lua_test ( tests/rand.lua )
+add_lua_test ( tests/encrypt.lua )
+add_lua_test ( tests/pkeytest.lua )
+add_lua_test ( tests/open_seal.lua )
