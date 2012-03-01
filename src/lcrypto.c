@@ -28,10 +28,6 @@
 
 #include "lua.h"
 #include "lauxlib.h"
-#if ! defined (LUA_VERSION_NUM) || LUA_VERSION_NUM < 501
-#include "compat-5.1.h"
-#endif
-
 #include "lcrypto.h"
 
 LUACRYPTO_API int luaopen_crypto(lua_State *L);
@@ -1803,7 +1799,7 @@ LUACRYPTO_API void luacrypto_set_info (lua_State *L)
   lua_pushliteral (L, "LuaCrypto is a Lua wrapper for OpenSSL");
   lua_settable (L, -3);
   lua_pushliteral (L, "_VERSION");
-  lua_pushliteral (L, "LuaCrypto 0.2.0");
+  lua_pushliteral (L, "LuaCrypto 0.3.0");
   lua_settable (L, -3);
 }
 
