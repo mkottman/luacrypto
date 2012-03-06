@@ -1799,7 +1799,7 @@ LUACRYPTO_API void luacrypto_set_info (lua_State *L)
   lua_pushliteral (L, "LuaCrypto is a Lua wrapper for OpenSSL");
   lua_settable (L, -3);
   lua_pushliteral (L, "_VERSION");
-  lua_pushliteral (L, "LuaCrypto 0.3.0");
+  lua_pushliteral (L, "LuaCrypto 0.3.1");
   lua_settable (L, -3);
 }
 
@@ -1813,8 +1813,10 @@ LUACRYPTO_API int luaopen_crypto(lua_State *L)
     {NULL, NULL},
   };
 
+#ifndef OPENSSL_EXTERNAL_INITIALIZATION
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
+#endif
 
   create_metatables (L);
   luaL_openlib (L, LUACRYPTO_CORENAME, core, 0);
