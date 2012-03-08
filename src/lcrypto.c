@@ -1036,8 +1036,9 @@ static int pkey_from_pem(lua_State *L)
   int ret;
 
   ret = BIO_puts(mem, key);
-  if (ret != strlen(key))
+  if (ret != strlen(key)) {
     goto error;
+  }
 
   if(private)
     *pkey = PEM_read_bio_PrivateKey(mem, NULL, NULL, NULL);
@@ -1504,6 +1505,92 @@ static X509 *x509__load_cert(BIO *cert)
     return x;
 }
 
+static X509 *x509__x509_from_string(const char *pem)
+{
+  BIO *mem = BIO_new(BIO_s_mem());
+  X509 *cert;
+  int ret;
+
+  if (!mem)
+    return NULL;
+
+  ret = BIO_puts(mem, pem);
+  if (ret != (int)strlen(pem))
+    goto error;
+
+  cert = x509__load_cert(mem);
+  if (cert == NULL)
+    goto error;
+
+  return cert;
+
+error:
+    BIO_free(mem);
+    return NULL;
+}
+
+struct x509_cert {
+  X509 *cert;
+};
+
+static struct x509_cert *x509_cert__get(lua_State *L)
+{
+  return luaL_checkudata(L, 1, LUACRYPTO_X509_CERT_NAME);
+}
+
+static int x509_cert_fnew(lua_State *L)
+{
+  struct x509_cert *x = lua_newuserdata(L, sizeof(struct x509_cert));
+
+  x->cert = NULL;
+
+  luaL_getmetatable(L, LUACRYPTO_X509_CERT_NAME);
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
+static int x509_cert_fx509_cert(lua_State *L)
+{
+  return x509_cert_fnew(L);
+}
+
+static int x509_cert_gc(lua_State *L)
+{
+  struct x509_cert *c = x509_cert__get(L);
+  X509_free(c->cert);
+  return 0;
+}
+
+static int x509_cert_from_pem(lua_State *L)
+{
+  struct x509_cert *x = x509_cert__get(L);
+  const char *pem = luaL_checkstring(L, 2);
+
+  if (x->cert != NULL)
+    X509_free(x->cert);
+
+  x->cert = x509__x509_from_string(pem);
+  if (!x->cert)
+    return crypto_error(L);
+
+  return 1;
+}
+
+static int x509_cert_pubkey(lua_State *L)
+{
+  struct x509_cert *x = x509_cert__get(L);
+  EVP_PKEY *pkey = X509_get_pubkey(x->cert);
+
+  if (!pkey)
+    return crypto_error(L);
+
+  EVP_PKEY **out_pkey = pkey_new(L);
+  *out_pkey = pkey;
+
+  return 1;
+}
+
 struct x509_ca {
   X509_STORE *store;
   STACK_OF(X509) *stack;
@@ -1562,31 +1649,8 @@ out:
   return ret;
 }
 
+
 /* verify a cert is signed by the ca */
-static X509 *x509_ca__x509_from_string(const char *pem)
-{
-  BIO *mem = BIO_new(BIO_s_mem());
-  X509 *cert;
-  int ret;
-
-  if (!mem)
-    return NULL;
-
-  ret = BIO_puts(mem, pem);
-  if (ret != (int)strlen(pem))
-    goto error;
-
-  cert = x509__load_cert(mem);
-  if (cert == NULL)
-    goto error;
-
-  return cert;
-
-error:
-    BIO_free(mem);
-    return NULL;
-}
-
 static int x509_ca_verify_pem(lua_State *L)
 {
   struct x509_ca *x = x509_ca__get(L);
@@ -1594,7 +1658,7 @@ static int x509_ca_verify_pem(lua_State *L)
   X509 *cert;
   int ret;
 
-  cert = x509_ca__x509_from_string(pem);
+  cert = x509__x509_from_string(pem);
   if (!cert)
     return crypto_error(L);
 
@@ -1614,7 +1678,7 @@ static int x509_ca_add_pem(lua_State *L)
   const char *pem = luaL_checkstring(L, 2);
   X509 *cert;
 
-  cert = x509_ca__x509_from_string(pem);
+  cert = x509__x509_from_string(pem);
   if (!cert)
     return crypto_error(L);
 
@@ -1738,6 +1802,15 @@ static void create_metatables (lua_State *L)
     { "to_pem", pkey_to_pem},
     { NULL, NULL }
   };
+  struct luaL_reg x509_functions[] = {
+    { NULL, NULL }
+  };
+  struct luaL_reg x509_methods[] = {
+    { "__gc", x509_cert_gc },
+    { "from_pem", x509_cert_from_pem},
+    { "pubkey", x509_cert_pubkey},
+    { NULL, NULL }
+  };
   struct luaL_reg x509_ca_functions[] = {
     { NULL, NULL }
   };
@@ -1757,6 +1830,7 @@ static void create_metatables (lua_State *L)
   CALLTABLE(sign);
   CALLTABLE(seal);
   CALLTABLE(open);
+  CALLTABLE(x509_cert);
   CALLTABLE(x509_ca);
 
   luacrypto_createmeta(L, LUACRYPTO_DIGESTNAME, digest_methods);
@@ -1768,11 +1842,13 @@ static void create_metatables (lua_State *L)
   luacrypto_createmeta(L, LUACRYPTO_PKEYNAME, pkey_methods);
   luacrypto_createmeta(L, LUACRYPTO_SEALNAME, seal_methods);
   luacrypto_createmeta(L, LUACRYPTO_OPENNAME, open_methods);
+  luacrypto_createmeta(L, LUACRYPTO_X509_CERT_NAME, x509_methods);
   luacrypto_createmeta(L, LUACRYPTO_X509_CA_NAME, x509_ca_methods);
 
   luaL_register (L, LUACRYPTO_RANDNAME, rand_functions);
   luaL_register (L, LUACRYPTO_HMACNAME, hmac_functions);
   luaL_register (L, LUACRYPTO_PKEYNAME, pkey_functions);
+  luaL_register (L, LUACRYPTO_X509_CERT_NAME, x509_functions);
   luaL_register (L, LUACRYPTO_X509_CA_NAME, x509_ca_functions);
 
   lua_pop (L, 3);
