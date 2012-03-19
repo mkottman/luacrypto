@@ -986,12 +986,17 @@ static int pkey_to_pem(lua_State *L)
 {
   EVP_PKEY **pkey = (EVP_PKEY **)luaL_checkudata(L, 1, LUACRYPTO_PKEYNAME);
   int private = lua_isboolean(L, 2) && lua_toboolean(L, 2);
+  struct evp_pkey_st *pkey_st = *pkey;
 
   long len;
   BUF_MEM *buf;
   BIO *mem = BIO_new(BIO_s_mem());
 
-  if(private)
+  if (private && pkey_st->type == EVP_PKEY_DSA)
+    PEM_write_bio_DSAPrivateKey(mem, pkey_st->pkey.dsa, NULL, NULL, 0, NULL, NULL);
+  else if (private && pkey_st->type == EVP_PKEY_RSA)
+    PEM_write_bio_RSAPrivateKey(mem, pkey_st->pkey.rsa, NULL, NULL, 0, NULL, NULL);
+  else if (private)
     PEM_write_bio_PrivateKey(mem, *pkey, NULL, NULL, 0, NULL, NULL);
   else
     PEM_write_bio_PUBKEY(mem, *pkey);
