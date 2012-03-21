@@ -1592,12 +1592,13 @@ static int x509_cert_from_pem(lua_State *L)
 static int x509_cert_pubkey(lua_State *L)
 {
   struct x509_cert *x = x509_cert__get(L);
+  EVP_PKEY **out_pkey;
   EVP_PKEY *pkey = X509_get_pubkey(x->cert);
 
   if (!pkey)
     return crypto_error(L);
 
-  EVP_PKEY **out_pkey = pkey_new(L);
+  out_pkey = pkey_new(L);
   *out_pkey = pkey;
 
   return 1;
