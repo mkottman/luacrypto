@@ -5,7 +5,7 @@ function hexprint(s)
 	print(crypto.hex(s))
 end
 
-require 'crypto'
+local crypto = require 'crypto'
 
 -- TESTING HEX
 
@@ -97,3 +97,4 @@ assert(not ok and res)
 
 local res = crypto.decrypt("aes128", crypto.encrypt("aes128", "", key, iv), key, iv)
 assert(res == "")
+print("test end.")

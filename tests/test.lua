@@ -3,14 +3,14 @@
 -- See Copyright Notice in license.html
 --]]
 
-require("crypto")
+local crypto = require("crypto")
 
 local digest = crypto.digest
 local hmac = crypto.hmac
 
-md5_KNOWN = "09920f6f666f8e7b09a8d00bd4d06873"
-sha1_KNOWN = "d6ed6e26ebeb37ba0792ec75a3d0b4dcec279d25"
-hmac_KNOWN = "70a7ea81a287d094c534cdd67be82e85066e13be"
+md5_KNOWN = "f43a1e7c387d09db960c9608e5131418"
+sha1_KNOWN = "b7ccc1777da5235737f6a65918b379e790f25b07"
+hmac_KNOWN = "db66c0954cd5f65b8fd48a651990f33f89ec4b96"
 
 print("LuaCrypto version: " .. crypto._VERSION)
 print("")
@@ -20,14 +20,14 @@ function report(w, s, F, t)
   assert(s == _G[t .. "_KNOWN"])
 end
 
-F = arg[1] or 'tests/message'
+F = arg[1] or 'message'
 for i, t in ipairs({"sha1", "md5", "sha1", "hmac"}) do
   print("testing " .. t)
   local d
   if (t == "hmac") then
-    d = hmac.new("sha1", "luacrypto")
+    d = crypto.hmac.new("sha1", "luacrypto")
   else
-    d = digest.new(t)
+    d = crypto.digest.new(t)
   end
   
   assert(io.input(F))

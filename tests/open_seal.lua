@@ -1,4 +1,4 @@
-require 'crypto'
+local crypto = require 'crypto'
 
 assert(crypto.pkey, "crypto.pkey is unavaliable")
 

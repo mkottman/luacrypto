@@ -1,4 +1,4 @@
-require 'crypto'
+local crypto = require 'crypto'
 
 assert(crypto.x509_ca, "crypto.x509_ca is unavaliable")
 
