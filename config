@@ -1,8 +1,8 @@
 # Installation directories
 # System's libraries directory (where binary libraries are installed)
-LUA_LIBDIR= /usr/lib/lua/5.1
+LUA_LIBDIR= /usr/local/lib
 # Lua includes directory
-LUA_INC= /usr/include/lua5.1
+LUA_INC= /usr/local/include
 
 # OS dependent
 LIB_OPTION= -shared #for Linux
