@@ -22,8 +22,8 @@ if ( WIN32 )
   add_definitions ( "-DLUACRYPTO_API=__declspec(dllexport)" )
 endif ( WIN32 )
 
-install_lua_module ( crypto src/lcrypto.c )
-target_link_libraries ( crypto ${CRYPTO_LIBRARY} ${SSL_LIBRARY} ${LIBS})
+install_lua_module ( libluacrypto src/lcrypto.c )
+target_link_libraries ( libluacrypto ${CRYPTO_LIBRARY} ${SSL_LIBRARY} ${LIBS})
 
 install_data ( README )
 install_doc ( doc/ )
