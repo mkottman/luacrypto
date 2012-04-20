@@ -1,5 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT([luacrypto], [0.3.0], [https://github.com/mkottman/luacrypto/issues])
+AC_INIT([luacrypto], [0.3.1], [https://github.com/mkottman/luacrypto/issues])
 AC_CONFIG_SRCDIR([src/lcrypto.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
