@@ -33,13 +33,17 @@ PKG_CHECK_MODULES([LUA], [lua])
 # lua libdir
 LUALIBDIR="`$PKGCONFIG --variable=libdir lua`"
 
+# dest of headers
+CRYPTOINC="${includedir}/${PACKAGE_NAME}"
+
 # substitute variables
 AC_SUBST([AM_CPPFLAGS], ["$OPENSSL_CFLAGS $LUA_CFLAGS"])
 AC_SUBST([OPENSSL_LIBS])
 AC_SUBST([LUA_LIBS])
 AC_SUBST([LUALIBDIR])
+AC_SUBST([CRYPTOINC])
 
-AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile tests/Makefile luacrypto.pc])
 AC_OUTPUT
 
 echo
