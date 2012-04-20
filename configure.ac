@@ -4,7 +4,7 @@ AC_CONFIG_SRCDIR([src/lcrypto.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall])
-LT_INIT([shared])
+LT_INIT([disable-static])
 
 # Checks for programs.
 AC_PROG_CC
