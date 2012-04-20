@@ -68,11 +68,14 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(libluacryptodir)"
-LTLIBRARIES = $(libluacrypto_LTLIBRARIES)
-libluacrypto_la_DEPENDENCIES =
-am_libluacrypto_la_OBJECTS = lcrypto.lo
-libluacrypto_la_OBJECTS = $(am_libluacrypto_la_OBJECTS)
+am__installdirs = "$(DESTDIR)$(cryptodir)"
+LTLIBRARIES = $(crypto_LTLIBRARIES)
+crypto_la_DEPENDENCIES =
+am_crypto_la_OBJECTS = lcrypto.lo
+crypto_la_OBJECTS = $(am_crypto_la_OBJECTS)
+crypto_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(crypto_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -86,8 +89,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libluacrypto_la_SOURCES)
-DIST_SOURCES = $(libluacrypto_la_SOURCES)
+SOURCES = $(crypto_la_SOURCES)
+DIST_SOURCES = $(crypto_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -214,10 +217,11 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-libluacryptodir = @LUALIBDIR@
-libluacrypto_la_LIBADD = @OPENSSL_LIBS@
-libluacrypto_LTLIBRARIES = libluacrypto.la
-libluacrypto_la_SOURCES = lcrypto.c lcrypto.h
+cryptodir = @LUALIBDIR@
+crypto_la_LIBADD = @OPENSSL_LIBS@
+crypto_LTLIBRARIES = crypto.la
+crypto_la_SOURCES = lcrypto.c lcrypto.h
+crypto_la_LDFLAGS = -module
 all: all-am
 
 .SUFFIXES:
@@ -252,39 +256,39 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-libluacryptoLTLIBRARIES: $(libluacrypto_LTLIBRARIES)
+install-cryptoLTLIBRARIES: $(crypto_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
-	test -z "$(libluacryptodir)" || $(MKDIR_P) "$(DESTDIR)$(libluacryptodir)"
-	@list='$(libluacrypto_LTLIBRARIES)'; test -n "$(libluacryptodir)" || list=; \
+	test -z "$(cryptodir)" || $(MKDIR_P) "$(DESTDIR)$(cryptodir)"
+	@list='$(crypto_LTLIBRARIES)'; test -n "$(cryptodir)" || list=; \
 	list2=; for p in $$list; do \
 	  if test -f $$p; then \
 	    list2="$$list2 $$p"; \
 	  else :; fi; \
 	done; \
 	test -z "$$list2" || { \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libluacryptodir)'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libluacryptodir)"; \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(cryptodir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(cryptodir)"; \
 	}
 
-uninstall-libluacryptoLTLIBRARIES:
+uninstall-cryptoLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(libluacrypto_LTLIBRARIES)'; test -n "$(libluacryptodir)" || list=; \
+	@list='$(crypto_LTLIBRARIES)'; test -n "$(cryptodir)" || list=; \
 	for p in $$list; do \
 	  $(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libluacryptodir)/$$f'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libluacryptodir)/$$f"; \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(cryptodir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(cryptodir)/$$f"; \
 	done
 
-clean-libluacryptoLTLIBRARIES:
-	-test -z "$(libluacrypto_LTLIBRARIES)" || rm -f $(libluacrypto_LTLIBRARIES)
-	@list='$(libluacrypto_LTLIBRARIES)'; for p in $$list; do \
+clean-cryptoLTLIBRARIES:
+	-test -z "$(crypto_LTLIBRARIES)" || rm -f $(crypto_LTLIBRARIES)
+	@list='$(crypto_LTLIBRARIES)'; for p in $$list; do \
 	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
 	  test "$$dir" != "$$p" || dir=.; \
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libluacrypto.la: $(libluacrypto_la_OBJECTS) $(libluacrypto_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libluacryptodir) $(libluacrypto_la_OBJECTS) $(libluacrypto_la_LIBADD) $(LIBS)
+crypto.la: $(crypto_la_OBJECTS) $(crypto_la_DEPENDENCIES) 
+	$(crypto_la_LINK) -rpath $(cryptodir) $(crypto_la_OBJECTS) $(crypto_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -407,7 +411,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES)
 installdirs:
-	for dir in "$(DESTDIR)$(libluacryptodir)"; do \
+	for dir in "$(DESTDIR)$(cryptodir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -437,7 +441,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libluacryptoLTLIBRARIES clean-libtool \
+clean-am: clean-cryptoLTLIBRARIES clean-generic clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -458,7 +462,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-libluacryptoLTLIBRARIES
+install-data-am: install-cryptoLTLIBRARIES
 
 install-dvi: install-dvi-am
 
@@ -504,23 +508,24 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libluacryptoLTLIBRARIES
+uninstall-am: uninstall-cryptoLTLIBRARIES
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libluacryptoLTLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libluacryptoLTLIBRARIES install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-libluacryptoLTLIBRARIES
+.PHONY: CTAGS GTAGS all all-am check check-am clean \
+	clean-cryptoLTLIBRARIES clean-generic clean-libtool ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am \
+	install-cryptoLTLIBRARIES install-data install-data-am \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-cryptoLTLIBRARIES
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
