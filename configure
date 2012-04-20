@@ -615,6 +615,7 @@ ac_includes_default="\
 ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
+CRYPTOINC
 LUALIBDIR
 AM_CPPFLAGS
 LUA_LIBS
@@ -12418,6 +12419,9 @@ fi
 # lua libdir
 LUALIBDIR="`$PKGCONFIG --variable=libdir lua`"
 
+# dest of headers
+CRYPTOINC="${includedir}/${PACKAGE_NAME}"
+
 # substitute variables
 AM_CPPFLAGS="$OPENSSL_CFLAGS $LUA_CFLAGS"
 
@@ -12425,7 +12429,8 @@ AM_CPPFLAGS="$OPENSSL_CFLAGS $LUA_CFLAGS"
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile tests/Makefile"
+
+ac_config_files="$ac_config_files Makefile src/Makefile doc/Makefile tests/Makefile luacrypto.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -13444,6 +13449,7 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+    "luacrypto.pc") CONFIG_FILES="$CONFIG_FILES luacrypto.pc" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
