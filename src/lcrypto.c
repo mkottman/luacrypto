@@ -1882,13 +1882,20 @@ LUACRYPTO_API int luaopen_crypto(lua_State *L)
     { NULL, NULL }
   };
 
-#ifndef OPENSSL_EXTERNAL_INITIALIZATION
-  OpenSSL_add_all_digests();
-  OpenSSL_add_all_ciphers();
-#endif
-
   luaL_newlib(L, core_functions);
   create_metatables (L);
   luacrypto_set_info (L);
+  luaL_checkversion(L);
   return 1;
 }
+
+/*
+ * OpenSSL_add_all_* is not thread safe, so init Openssl when dlopen
+ */
+void __attribute__ ((constructor)) luacrypto_init(void){
+    #ifndef OPENSSL_EXTERNAL_INITIALIZATION
+    OpenSSL_add_all_digests();
+    OpenSSL_add_all_ciphers();
+    #endif
+}
+

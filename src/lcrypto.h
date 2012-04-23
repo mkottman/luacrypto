@@ -31,5 +31,6 @@ LUACRYPTO_API void luacrypto_createmeta (lua_State *L, const char *name, const l
 LUACRYPTO_API void luacrypto_setmeta (lua_State *L, const char *name);
 LUACRYPTO_API void luacrypto_set_info (lua_State *L);
 LUACRYPTO_API int luaopen_crypto(lua_State *L);
+void __attribute__ ((constructor)) luacrypto_init(void);
 
 #endif
