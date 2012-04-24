@@ -1,7 +1,7 @@
 --- This file is part of LuaDist project
 
 name = "luacrypto"
-version = "0.3.0"
+version = "0.3.0.20120420"
 
 desc = "LuaCrypto provides a Lua frontend to the OpenSSL cryptographic library."
 author = "Keith Howe"

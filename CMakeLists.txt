@@ -26,11 +26,11 @@ endif ( WIN32 )
 install_lua_module ( crypto src/lcrypto.c )
 target_link_libraries ( crypto ${CRYPTO_LIBRARY} ${SSL_LIBRARY} ${LIBS})
 
-install_data ( README )
+install_data ( COPYING ChangeLog README NEWS )
 install_doc ( doc/ PATTERN Makefile* EXCLUDE )
 install_test ( tests/ PATTERN Makefile* EXCLUDE )
 
-add_lua_test ( tests/test.lua WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
+add_lua_test ( tests/test.lua WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests )
 add_lua_test ( tests/rand.lua )
 add_lua_test ( tests/encrypt.lua )
 add_lua_test ( tests/pkeytest.lua )
