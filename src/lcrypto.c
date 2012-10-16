@@ -1058,7 +1058,7 @@ static int pkey_from_pem(lua_State *L)
   int private = lua_isboolean(L, 2) && lua_toboolean(L, 2);
   EVP_PKEY **pkey = pkey_new(L);
   BIO *mem = BIO_new(BIO_s_mem());
-  int ret;
+  size_t ret;
 
   ret = BIO_puts(mem, key);
   if (ret != strlen(key)) {
