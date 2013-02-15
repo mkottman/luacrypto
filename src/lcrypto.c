@@ -970,6 +970,7 @@ static EVP_PKEY **pkey_new(lua_State *L)
   return pkey;
 }
 
+#ifndef DONT_USE_OPENSSL_DEPRECATED_FUNCTIONS
 static int pkey_generate(lua_State *L)
 {
   const char *options[] = {"rsa", "dsa", NULL};
@@ -994,6 +995,66 @@ static int pkey_generate(lua_State *L)
     return 1;
   }
 }
+
+#else
+
+static int pkey_generate(lua_State *L)
+{
+  const char *options[] = {"rsa", "dsa", NULL};
+  int idx = luaL_checkoption(L, 1, NULL, options);
+  int key_len = luaL_checkinteger(L, 2);
+  EVP_PKEY **pkey = pkey_new(L);
+
+  if (idx == 0) {
+    BN_GENCB cb;
+    int i;
+    int success = 0;
+    int e_len = sizeof(RSA_F4)*8;
+    RSA *rsa = RSA_new();
+    BIGNUM *e = BN_new();
+
+    if (rsa && e) {
+      for (i = 0; i < e_len; ++i) {
+        if (RSA_F4 & (1UL << i))
+          if (BN_set_bit(e, i) == 0)
+            break;
+      }
+
+      if (i == e_len) {
+        BN_GENCB_set_old(&cb, NULL, NULL);
+        success = RSA_generate_key_ex(rsa, key_len, e, &cb);
+      }
+    }
+
+    if(e) BN_free(e);
+    if(!success || (*pkey = EVP_PKEY_new()) == NULL) {
+      if(rsa) RSA_free(rsa);
+      return crypto_error(L);
+    }
+
+    EVP_PKEY_assign_RSA(*pkey, rsa);
+    return 1;
+  } else {
+    BN_GENCB cb;
+    int success = 0;
+    DSA *dsa = DSA_new();
+
+    if (dsa) {
+      BN_GENCB_set_old(&cb, NULL, NULL);
+      if (DSA_generate_parameters_ex(dsa, key_len, NULL, 0, NULL, NULL, &cb))
+        success = DSA_generate_key(dsa);
+    }
+
+    if(!success || (*pkey = EVP_PKEY_new()) == NULL) {
+      if(dsa) DSA_free(dsa);
+      return crypto_error(L);
+    }
+
+    EVP_PKEY_assign_DSA(*pkey, dsa);
+    return 1;
+  }
+}
+#endif
 
 static int pkey_to_pem(lua_State *L)
 {
