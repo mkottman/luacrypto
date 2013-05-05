@@ -58,4 +58,29 @@ p4 = ctx:final()
 assert(message == (p3 .. p4))
 end
 
+do
+local ctx = crypto.seal.new("aes128", kpub)
+local t = {}
+ctx:set_writer(table.insert, t)
+local a, b = ctx:get_writer()
+assert(a == table.insert)
+assert(b == t)
+assert(ctx == ctx:update(message))
+local ek_2, iv_2 = ctx:final()
+
+assert(crypto.open("aes128", table.concat(t), kpriv, ek_2, iv_2) == message)
+
+local ctx = crypto.open.new("aes128", kpriv, ek_2, iv_2)
+local t2 = {}
+ctx:set_writer(table.insert, t2)
+local a, b = ctx:get_writer()
+assert(a == table.insert)
+assert(b == t2)
+
+assert(ctx == ctx:update(table.concat(t)))
+assert(ctx == ctx:final())
+
+assert(message == table.concat(t2))
+end
+
 print("OK")
