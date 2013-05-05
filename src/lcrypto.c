@@ -315,11 +315,22 @@ static int digest_fdigest(lua_State *L)
 
 /*************** EVP_CIPHER API ***************/
 //{
+
+#ifndef LCRYPTO_MAX_BUFFER_SIZE
+#  define LCRYPTO_MAX_BUFFER_SIZE 4096
+#endif
+
 typedef struct l_evp_cipher_ctx_tag
 {
     EVP_CIPHER_CTX ctx[1];
     int cb_ref, ud_ref;
 } l_evp_cipher_ctx;
+
+typedef int (*pfinit_fun) (EVP_CIPHER_CTX *, const EVP_CIPHER *, ENGINE *, const unsigned char *, const unsigned char *);
+
+typedef int (*pfcrypt_update)(EVP_CIPHER_CTX*, unsigned char*, int*, const unsigned char*, int);
+
+typedef int (*pfcrypt_final)(EVP_CIPHER_CTX*, unsigned char*, int*);
 
 static void encrypt_static_asserts(void)
 {
@@ -413,15 +424,84 @@ static int evp_cipher_ctx_cleanup(lua_State *L, l_evp_cipher_ctx *ctx)
     return 0;
 }
 
+static int evp_cipher_ctx_update(lua_State *L, l_evp_cipher_ctx *ctx, pfcrypt_update pfupdate, const char *input, size_t input_len)
+{
+    size_t buf_len = input_len + (size_t)EVP_CIPHER_CTX_block_size(ctx->ctx);
+    if(buf_len <= LCRYPTO_MAX_BUFFER_SIZE){
+        LCRYPTO_DEFINE_TEMP_BUFFER(buf);
+        int n;
+        unsigned char *buffer = (unsigned char *)LCRYPTO_ALLOC_TEMP(buf, buf_len);
+        int output_len = 0;
+
+        if (!pfupdate(ctx->ctx, buffer, &output_len, (unsigned char *)input, (int)input_len))
+        {
+            LCRYPTO_FREE_TEMP(buf, buffer);
+            return crypto_error(L);
+        }
+
+        if(ctx->cb_ref == LUA_NOREF)
+        {
+            lua_pushlstring(L, (char *)buffer, (size_t)output_len);
+            LCRYPTO_FREE_TEMP(buf, buffer);
+            return 1;
+        }
+
+        n = evp_cipher_ctx_push_cb(L, ctx);
+        lua_pushlstring(L, (char *)buffer, (size_t)output_len);
+        LCRYPTO_FREE_TEMP(buf, buffer);
+        lua_call(L, n, 0);
+        lua_settop(L, 1);
+        return 1;
+    }
+    //-----------------------------------------------------------------
+    {size_t chunk_size = LCRYPTO_MAX_BUFFER_SIZE - (size_t)EVP_CIPHER_CTX_block_size(ctx->ctx);
+    const int use_buffer = (ctx->cb_ref == LUA_NOREF)?1:0;
+    const char *b, *e;
+    int n;
+    luaL_Buffer buffer;
+    unsigned char *tmp = (unsigned char *)malloc(LCRYPTO_MAX_BUFFER_SIZE);
+
+    if(use_buffer) luaL_buffinit(L, &buffer);
+    else n = evp_cipher_ctx_push_cb(L, ctx);
+    for(b = input, e = input + input_len; b < e; b += chunk_size)
+    {
+        size_t left = e - b;
+        int output_len = 0;
+        if(left > chunk_size) left = chunk_size;
+
+        memcpy(tmp, b, left);
+        if (!pfupdate(ctx->ctx, tmp, &output_len, (unsigned char *)b, (int)left))
+        {
+            free(tmp);
+            return crypto_error(L);
+        }
+
+        if(use_buffer) luaL_addlstring(&buffer, (char*)tmp, output_len);
+        else{
+            int i, top = lua_gettop(L);
+            for(i = n; i > 0; --i) lua_pushvalue(L, top - i + 1);
+            lua_pushlstring(L, (char*)tmp, output_len);
+            //! @todo use traceback to catch error call stack
+            if(0 != lua_pcall(L, n, 0, 0)){
+                free(tmp);
+                return lua_error(L);
+            }
+        }
+    }
+    free(tmp);
+
+    if(use_buffer){
+        luaL_pushresult(&buffer);
+        return 1;
+    }}
+
+    lua_settop(L, 1);
+    return 1;
+}
+
 #define TRY_CTX(fun) if (!fun) { *size_to_return = crypto_error(L); return 0; }
 
-typedef int (*pfinit_fun) (EVP_CIPHER_CTX *, const EVP_CIPHER *, ENGINE *, const unsigned char *, const unsigned char *);
-
 typedef l_evp_cipher_ctx (*pfencrypt_new)(lua_State *);
-
-typedef int (*pfcrypt_update)(EVP_CIPHER_CTX*, unsigned char*, int*, const unsigned char*, int);
-
-typedef int (*pfcrypt_final)(EVP_CIPHER_CTX*, unsigned char*, int*);
 
 static int parse_enc_params(lua_State *L, EVP_CIPHER **cipher, char **key, size_t *key_len,
                             char **iv, size_t *iv_len, int *pad, int *size_to_return,
@@ -589,30 +669,8 @@ static int encrypt_update_impl(lua_State *L, const char *tname, pfcrypt_update p
 {
     l_evp_cipher_ctx *ctx = ecrypt_get_at(L, 1, tname);
     size_t input_len;
-    const unsigned char *input = (unsigned char *)correct_range(L, &input_len);
-    int output_len = 0, n;
-    LCRYPTO_DEFINE_TEMP_BUFFER(buf);
-    unsigned char *buffer = (unsigned char *)LCRYPTO_ALLOC_TEMP(buf, input_len + (size_t)EVP_CIPHER_CTX_block_size(ctx->ctx));
-
-    if (!pfupdate(ctx->ctx, buffer, &output_len, input, (int)input_len))
-    {
-        LCRYPTO_FREE_TEMP(buf, buffer);
-        return crypto_error(L);
-    }
-
-    if(ctx->cb_ref == LUA_NOREF)
-    {
-        lua_pushlstring(L, (char *)buffer, (size_t)output_len);
-        LCRYPTO_FREE_TEMP(buf, buffer);
-        return 1;
-    }
-
-    n = evp_cipher_ctx_push_cb(L, ctx);
-    lua_pushlstring(L, (char *)buffer, (size_t)output_len);
-    LCRYPTO_FREE_TEMP(buf, buffer);
-    lua_call(L, n, 0);
-    lua_settop(L, 1);
-    return 1;
+    const char *input = correct_range(L, &input_len);
+    return evp_cipher_ctx_update(L, ctx, pfupdate, input, input_len);
 }
 
 static int encrypt_final_impl(lua_State *L, const char *tname, pfcrypt_final pffinal)
@@ -1676,31 +1734,9 @@ static int seal_get_writer(lua_State *L)
 static int seal_update(lua_State *L)
 {
     seal_context *c = seal_get_at(L, 1);
-    l_evp_cipher_ctx *ectx = &c->ctx;
     size_t input_len;
-    const unsigned char *input = (unsigned char *)correct_range(L, &input_len);
-    LCRYPTO_DEFINE_TEMP_BUFFER(buf);
-    int n, output_len = 0;
-    unsigned char *buffer = (unsigned char *)LCRYPTO_ALLOC_TEMP(buf, input_len + (size_t)EVP_CIPHER_CTX_block_size(ectx->ctx));
-
-    if(!EVP_SealUpdate(ectx->ctx, buffer, &output_len, input, (int)input_len))
-    {
-        return crypto_error(L);
-    }
-
-    if(ectx->cb_ref == LUA_NOREF)
-    {
-        lua_pushlstring(L, (char*)buffer, (size_t)output_len);
-        LCRYPTO_FREE_TEMP(buf, buffer);
-        return 1;
-    }
-
-    n = evp_cipher_ctx_push_cb(L, ectx);
-    lua_pushlstring(L, (char*)buffer, (size_t)output_len);
-    LCRYPTO_FREE_TEMP(buf, buffer);
-    lua_call(L, n, 0);
-    lua_settop(L, 1);
-    return 1;
+    const char *input = correct_range(L, &input_len);
+    return evp_cipher_ctx_update(L, &c->ctx, EVP_EncryptUpdate, input, input_len);
 }
 
 static int seal_final(lua_State *L)
@@ -1920,47 +1956,15 @@ static int open_get_writer(lua_State *L)
 
 static int open_update(lua_State *L)
 {
-    open_context *c = (open_context *)luaL_checkudata(L, 1, LUACRYPTO_OPENNAME);
-    l_evp_cipher_ctx *ectx = &c->ctx;
-    size_t input_len = 0;
-    const unsigned char *input = (unsigned char *)correct_range(L, &input_len);
-    int n;
-
-    luaL_Buffer buffer;
-    luaL_buffinit(L, &buffer);
-
-    while (input_len > 0)
-    {
-        int output_length;
-        unsigned char *temp = (unsigned char *)luaL_prepbuffer(&buffer);
-        size_t sz = MIN(LUAL_BUFFERSIZE - 1, input_len);
-        if (!EVP_OpenUpdate(c->ctx.ctx, temp, &output_length, input, (int)sz))
-        {
-            return crypto_error(L);
-        }
-
-        input += sz;
-        input_len -= sz;
-        luaL_addsize(&buffer, output_length);
-    }
-
-    luaL_pushresult(&buffer);
-
-    if(ectx->cb_ref == LUA_NOREF)
-    {
-        return 1;
-    }
-
-    n = evp_cipher_ctx_push_cb(L, ectx);
-    lua_pushvalue(L, -n-1);
-    lua_call(L, n, 0);
-    lua_settop(L, 1);
-    return 1;
+    open_context *c = open_get_at(L, 1);
+    size_t input_len;
+    const char *input = correct_range(L, &input_len);
+    return evp_cipher_ctx_update(L, &c->ctx, EVP_DecryptUpdate, input, input_len);
 }
 
 static int open_final(lua_State *L)
 {
-    open_context *c = (open_context *)luaL_checkudata(L, 1, LUACRYPTO_OPENNAME);
+    open_context *c = open_get_at(L, 1);
     l_evp_cipher_ctx *ectx = &c->ctx;
     int n, output_len = 0;
     unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
