@@ -341,7 +341,7 @@ static int parse_enc_params(lua_State *L, EVP_CIPHER **cipher, char **key, size_
         for(i = 0; i<*key_len; ++i)
         {
             lua_rawgeti(L, key_pos, i+1);
-            key_buf[i] = luaL_checkint(L,-1);
+            key_buf[i] = (char)luaL_checkint(L,-1);
             lua_pop(L, 1);
         }
         *key = &key_buf[0];
@@ -375,7 +375,7 @@ static int parse_enc_params(lua_State *L, EVP_CIPHER **cipher, char **key, size_
         for(i = 0; i<*iv_len; ++i)
         {
             lua_rawgeti(L, iv_pos, i+1);
-            iv_buf[i] = luaL_checkint(L,-1);
+            iv_buf[i] = (char)luaL_checkint(L,-1);
             lua_pop(L, 1);
         }
         *iv = &iv_buf[0];
@@ -1187,6 +1187,7 @@ static int rand_write(lua_State *L)
 
 static int rand_cleanup(lua_State *L UNUSED )
 {
+    (void*)L;
     RAND_cleanup();
     return 0;
 }
@@ -1369,7 +1370,7 @@ static int pkey_from_pem(lua_State *L)
     int ret;
 
     ret = BIO_puts(mem, key);
-    if (ret != strlen(key))
+    if ((size_t)ret != strlen(key))
     {
         goto error;
     }
@@ -2066,36 +2067,36 @@ static int x509_ca_add_pem(lua_State *L)
 
 #define IMPLEMENT_EVP_CLONE(NAME, MTNAME)                                   \
 static int NAME##_clone(lua_State *L){                                      \
-    EVP_CIPHER_CTX *c = (EVP_CIPHER_CTX*)luaL_checkudata(L, 1, MTNAME);       \
-    EVP_CIPHER_CTX *d = NAME##_pnew(L);                                       \
-    EVP_CIPHER_CTX_init(d);                                                   \
-    if(!EVP_CIPHER_CTX_copy(d, c)) return crypto_error(L);                    \
-    return 1;                                                                 \
+    EVP_CIPHER_CTX *c = (EVP_CIPHER_CTX*)luaL_checkudata(L, 1, MTNAME);     \
+    EVP_CIPHER_CTX *d = NAME##_pnew(L);                                     \
+    EVP_CIPHER_CTX_init(d);                                                 \
+    if(!EVP_CIPHER_CTX_copy(d, c)) return crypto_error(L);                  \
+    return 1;                                                               \
 }
 
-#define IMPLEMENT_EVP_RESETIV(NAME, MTNAME)                                   \
-static int NAME##_resetiv(lua_State *L){                                      \
-    EVP_CIPHER_CTX *c = (EVP_CIPHER_CTX*)luaL_checkudata(L, 1, MTNAME);         \
-    size_t iv_len, i; const char *iv;                                           \
-    if(lua_istable(L, 2)){                                                      \
-        iv_len = lua_objlen(L, 2);                                                \
-        if(iv_len > (size_t)EVP_CIPHER_iv_length(c->cipher)){                     \
-            return luaL_argerror(L, 2, "invalid iv length");                        \
-        }                                                                         \
-        for(i = 0; i<iv_len; ++i){                                                \
-            lua_rawgeti(L, 2, i+1);                                                 \
-            c->iv[i] = (int)lua_tonumber(L,-1);                                     \
-            lua_pop(L, 1);                                                          \
-        }                                                                         \
-        return 0;                                                                 \
-    }                                                                           \
-    else if( iv = (char*)lua_tolstring(L, 2, &iv_len) ){                        \
-        if(iv_len > (size_t)EVP_CIPHER_iv_length(c->cipher)) {                    \
-            return luaL_argerror(L, 2, "invalid iv length");                        \
-        }                                                                         \
-        memcpy(&c->iv[0], iv, iv_len);                                            \
-    }                                                                           \
-    return luaL_argerror(L, 2, "invalid iv value");                             \
+#define IMPLEMENT_EVP_RESETIV(NAME, MTNAME)                                 \
+static int NAME##_resetiv(lua_State *L){                                    \
+    EVP_CIPHER_CTX *c = (EVP_CIPHER_CTX*)luaL_checkudata(L, 1, MTNAME);     \
+    size_t iv_len, i; const char *iv;                                       \
+    if(lua_istable(L, 2)){                                                  \
+        iv_len = lua_objlen(L, 2);                                          \
+        if(iv_len > (size_t)EVP_CIPHER_iv_length(c->cipher)){               \
+            return luaL_argerror(L, 2, "invalid iv length");                \
+        }                                                                   \
+        for(i = 0; i<iv_len; ++i){                                          \
+            lua_rawgeti(L, 2, i+1);                                         \
+            c->iv[i] = (unsigned char)lua_tointeger(L,-1);                  \
+            lua_pop(L, 1);                                                  \
+        }                                                                   \
+        return 0;                                                           \
+    }                                                                       \
+    else if( iv = (char*)lua_tolstring(L, 2, &iv_len) ){                    \
+        if(iv_len > (size_t)EVP_CIPHER_iv_length(c->cipher)) {              \
+            return luaL_argerror(L, 2, "invalid iv length");                \
+        }                                                                   \
+        memcpy(&c->iv[0], iv, iv_len);                                      \
+    }                                                                       \
+    return luaL_argerror(L, 2, "invalid iv value");                         \
 }
 
 #define IMPLEMENT_EVP_METHOD(IMPL)                 \
