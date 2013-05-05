@@ -546,6 +546,14 @@ static int encrypt_set_writer_impl(lua_State *L, const char *tname)
     return lua_error(L);
 }
 
+static int encrypt_get_writer_impl(lua_State *L, const char *tname)
+{
+    l_evp_cipher_ctx *ctx = ecrypt_get_at(L, 1, tname);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ctx->cb_ref);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ctx->ud_ref);
+    return 2;
+}
+
 static int ecrypt_push_cb(lua_State *L, l_evp_cipher_ctx *ctx)
 {
     assert(ctx->cb_ref != LUA_NOREF);
@@ -747,6 +755,11 @@ static int encrypt_set_writer(lua_State *L)
     return encrypt_set_writer_impl(L, LUACRYPTO_ENCRYPTNAME);
 }
 
+static int encrypt_get_writer(lua_State *L)
+{
+    return encrypt_get_writer_impl(L, LUACRYPTO_ENCRYPTNAME);
+}
+
 static int encrypt_update(lua_State *L)
 {
     return encrypt_update_impl(L, LUACRYPTO_ENCRYPTNAME, &EVP_EncryptUpdate);
@@ -795,6 +808,11 @@ static int decrypt_fnew(lua_State *L)
 static int decrypt_set_writer(lua_State *L)
 {
     return encrypt_set_writer_impl(L, LUACRYPTO_DECRYPTNAME);
+}
+
+static int decrypt_get_writer(lua_State *L)
+{
+    return encrypt_get_writer_impl(L, LUACRYPTO_DECRYPTNAME);
 }
 
 static int decrypt_update(lua_State *L)
@@ -2244,6 +2262,7 @@ static void create_call_table(lua_State *L, const char *name, lua_CFunction crea
         { "clone", name##_clone },          \
         { "resetiv", name##_resetiv },      \
         { "set_writer", name##_set_writer },\
+        { "get_writer", name##_get_writer },\
         {NULL, NULL},                       \
     }
 

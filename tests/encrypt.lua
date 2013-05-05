@@ -43,6 +43,11 @@ do -- test writer
 local t = {}
 local ctx = crypto.encrypt.new(cipher, key, iv)
 ctx:set_writer(table.insert, t)
+
+local a,b = ctx:get_writer()
+assert(a == table.insert)
+assert(b == t)
+
 assert(ctx == ctx:update(text))
 assert(ctx == ctx:final())
 local res3 = table.concat(t)
@@ -71,6 +76,11 @@ do -- test writer
 local t = {}
 local ctx = crypto.decrypt.new(cipher, key, iv)
 ctx:set_writer(table.insert, t)
+
+local a,b = ctx:get_writer()
+assert(a == table.insert)
+assert(b == t)
+
 assert(ctx == ctx:update(res))
 assert(ctx == ctx:final())
 local dec2 = table.concat(t)
