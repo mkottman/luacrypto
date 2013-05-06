@@ -499,6 +499,28 @@ static int evp_cipher_ctx_update(lua_State *L, l_evp_cipher_ctx *ctx, pfcrypt_up
     return 1;
 }
 
+static int evp_cipher_ctx_final(lua_State *L, l_evp_cipher_ctx *ctx, pfcrypt_final pffinal)
+{
+    int n, output_len = 0;
+    unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
+
+    if (!pffinal(ctx->ctx, buffer, &output_len))
+    {
+        return crypto_error(L);
+    }
+
+    if(ctx->cb_ref == LUA_NOREF)
+    {
+        lua_pushlstring(L, (char *)buffer, (size_t)output_len);
+        return 1;
+    }
+
+    n = evp_cipher_ctx_push_cb(L, ctx);
+    lua_pushlstring(L, (char *)buffer, (size_t)output_len);
+    lua_call(L, n, 0);
+    return 0;
+}
+
 #define TRY_CTX(fun) if (!fun) { *size_to_return = crypto_error(L); return 0; }
 
 typedef l_evp_cipher_ctx (*pfencrypt_new)(lua_State *);
@@ -675,26 +697,13 @@ static int encrypt_update_impl(lua_State *L, const char *tname, pfcrypt_update p
 
 static int encrypt_final_impl(lua_State *L, const char *tname, pfcrypt_final pffinal)
 {
-    l_evp_cipher_ctx *ctx = ecrypt_get_at(L, 1, tname);
-    int n, output_len = 0;
-    unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
-
-    if (!pffinal(ctx->ctx, buffer, &output_len))
+    int ret = evp_cipher_ctx_final(L, ecrypt_get_at(L, 1, tname), pffinal);
+    if (ret == 0)
     {
-        return crypto_error(L);
-    }
-
-    if(ctx->cb_ref == LUA_NOREF)
-    {
-        lua_pushlstring(L, (char *)buffer, (size_t)output_len);
+        lua_settop(L, 1);
         return 1;
     }
-
-    n = evp_cipher_ctx_push_cb(L, ctx);
-    lua_pushlstring(L, (char *)buffer, (size_t)output_len);
-    lua_call(L, n, 0);
-    lua_settop(L, 1);
-    return 1;
+    return ret;
 }
 
 static int encrypt_tostring_impl(lua_State *L, const char *tname)
@@ -1742,30 +1751,19 @@ static int seal_update(lua_State *L)
 static int seal_final(lua_State *L)
 {
     seal_context *c = seal_get_at(L, 1);
-    l_evp_cipher_ctx *ectx = &c->ctx;
-    int n, output_len = 0;
-    unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
-
-    EVP_SealFinal(c->ctx.ctx, buffer, &output_len);
-
-    if(ectx->cb_ref == LUA_NOREF)
+    int ret = evp_cipher_ctx_final(L, &c->ctx, EVP_SealFinal);
+    if (ret > 1) //@fixme detect if crypto_error change interface
     {
-        lua_pushlstring(L, (char*)buffer, (size_t)output_len);
-        n = 1;
+        return ret;
     }
-    else{
-        n = evp_cipher_ctx_push_cb(L, ectx);
-        lua_pushlstring(L, (char*)buffer, (size_t)output_len);
-        lua_call(L, n, 0);
-        n = 0;
-    }
+
     lua_pushlstring(L, (const char *)c->ek, (size_t)c->eklen);
     lua_pushlstring(L, (const char *)c->iv, (size_t)EVP_CIPHER_iv_length(c->ctx.ctx->cipher));
 
     free(c->ek);
     c->ek = NULL;
 
-    return n + 2;
+    return ret + 2;
 }
 
 static int seal_fseal(lua_State *L)
@@ -1965,23 +1963,13 @@ static int open_update(lua_State *L)
 static int open_final(lua_State *L)
 {
     open_context *c = open_get_at(L, 1);
-    l_evp_cipher_ctx *ectx = &c->ctx;
-    int n, output_len = 0;
-    unsigned char buffer[EVP_MAX_BLOCK_LENGTH];
-
-    EVP_OpenFinal(ectx->ctx, buffer, &output_len);
-
-    if(ectx->cb_ref == LUA_NOREF)
+    int ret = evp_cipher_ctx_final(L, &c->ctx, EVP_OpenFinal);
+    if (ret == 0)
     {
-        lua_pushlstring(L, (char *)buffer, (size_t)output_len);
+        lua_settop(L, 1);
         return 1;
     }
-
-    n = evp_cipher_ctx_push_cb(L, ectx);
-    lua_pushlstring(L, (char *)buffer, (size_t)output_len);
-    lua_call(L, n, 0);
-    lua_settop(L, 1);
-    return 1;
+    return ret;
 }
 
 static int open_fopen(lua_State *L)
