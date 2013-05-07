@@ -2053,6 +2053,30 @@ static int open_fopen(lua_State *L)
 /*************** CORE API ***************/
 //{
 
+static int luacrypto_openssl_version(lua_State *L)
+{
+    lua_pushstring(L, OPENSSL_VERSION_TEXT);
+    return 1;
+}
+
+static int luacrypto_openssl_nversion(lua_State *L)
+{
+    lua_pushnumber(L, OPENSSL_VERSION_NUMBER);
+    return 1;
+}
+
+static int luacrypto_shlib_version(lua_State *L)
+{
+    lua_pushstring(L, SHLIB_VERSION_NUMBER);
+    return 1;
+}
+
+static int luacrypto_shlib_history(lua_State *L)
+{
+    lua_pushstring(L, SHLIB_VERSION_HISTORY);
+    return 1;
+}
+
 static void list_callback(const OBJ_NAME *obj, void *arg)
 {
     lua_State *L = (lua_State *)arg;
@@ -2368,6 +2392,11 @@ static void create_metatables (lua_State *L)
     int top;
     struct luaL_Reg core_functions[] =
     {
+        { "openssl_version",        luacrypto_openssl_version  },
+        { "openssl_version_number", luacrypto_openssl_nversion },
+        { "openssl_shlib_version",  luacrypto_shlib_version    },
+        { "openssl_shlib_history",  luacrypto_shlib_history    },
+
         { "list", luacrypto_list },
         { "hex", luacrypto_hex },
         { NULL, NULL }
