@@ -1,3 +1,5 @@
+local HAS_RUNNER = not not lunit
+
 local lunit = require "lunit"
 assert(lunit.TEST_CASE, "lunitx >= 0.7 require")
 
@@ -23,4 +25,4 @@ require "resetiv"
 require "digest"
 require "encrypt_large"
 
-lunit.run()
+if not HAS_RUNNER then lunit.run() end
