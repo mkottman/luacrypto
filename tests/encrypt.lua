@@ -39,6 +39,21 @@ local p2 = ctx:final()
 local res3 = p1 .. p2
 assert(res == res3, "constructed result is different from direct")
 
+do -- test writer
+local t = {}
+local ctx = crypto.encrypt.new(cipher, key, iv)
+ctx:set_writer(table.insert, t)
+
+local a,b = ctx:get_writer()
+assert(a == table.insert)
+assert(b == t)
+
+assert(ctx == ctx:update(text))
+assert(ctx == ctx:final())
+local res3 = table.concat(t)
+assert(res == res3, "constructed result is different from direct")
+end
+
 -- TESTING DECRYPT
 
 assert(crypto.decrypt, "missing crypto.decrypt")
@@ -56,6 +71,21 @@ local p2 = ctx:final()
 local dec2 = p1 .. p2
 
 assert(dec2 == text, "different partial result")
+
+do -- test writer
+local t = {}
+local ctx = crypto.decrypt.new(cipher, key, iv)
+ctx:set_writer(table.insert, t)
+
+local a,b = ctx:get_writer()
+assert(a == table.insert)
+assert(b == t)
+
+assert(ctx == ctx:update(res))
+assert(ctx == ctx:final())
+local dec2 = table.concat(t)
+assert(dec2 == text, "different partial result")
+end
 
 -- Testing errors when decrypting
 local ctx, err = crypto.decrypt("aes128", res, key.."improper key", iv)

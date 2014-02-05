@@ -10,9 +10,14 @@ digests (MD5, SHA-1, HMAC, and more), encryption, decryption and crypto-grade ra
 dependencies = {
 	"lua >= 5.1",
 }
+external_dependencies = {
+	OPENSSL = {
+		header = "openssl/evp.h"
+	}
+}
 source = {
-	url = [[git://github.com/mkottman/luacrypto.git]],
-	dir = "luacrypto"
+	url = "https://github.com/mkottman/luacrypto/archive/master.zip",
+	dir = "luacrypto-master",
 }
 build = {
 	platforms = {
@@ -22,12 +27,14 @@ build = {
 			install_command = [[copy ".\Release\crypto.dll" "$(LIBDIR)\crypto.dll" /y ]]
 		},
 		unix = {
-			type = "make",
-			variables = {
-				INCONCERT_DEVEL = "$(INCONCERT_DEVEL)",
-				LUA_LUADIR = "$(LUADIR)",
-				LUA_LIBDIR = "$(LIBDIR)",
-				LUA_PREFIX  = "$(PREFIX)"
+			type = "builtin",
+			modules = {
+				crypto = {
+					sources = "src/lcrypto.c",
+					incdirs = "$(OPENSSL_INCDIR)",
+					libdirs = "$(OPENSSL_LIBDIR)",
+					libraries = "crypto",
+				}
 			}
 		}
 	},
