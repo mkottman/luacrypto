@@ -31,7 +31,7 @@ PKG_CHECK_MODULES([OPENSSL], [openssl])
 PKG_CHECK_MODULES([LUA], [lua])
 
 # lua libdir
-LUALIBDIR="`$PKGCONFIG --variable=libdir lua`"
+LUALIBDIR="`$PKGCONFIG --variable=INSTALL_CMOD lua`"
 
 # dest of headers
 CRYPTOINC="${includedir}/${PACKAGE_NAME}"
