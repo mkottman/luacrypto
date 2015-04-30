@@ -321,7 +321,7 @@ static int init_encryptor_decryptor(int (*init_fun)(EVP_CIPHER_CTX *, const EVP_
             memcpy(the_iv, iv, iv_len);
 
     memcpy(the_key, key, key_len);
-    TRY_CTX(EVP_CIPHER_CTX_set_key_length(c, key_len))
+    EVP_CIPHER_CTX_set_key_length(c, key_len);
     TRY_CTX(init_fun(c, NULL, NULL, the_key, the_iv))
 
     return 1;
