@@ -968,7 +968,7 @@ static int verify_fverify(lua_State *L)
 
 static int rand_do_bytes(lua_State *L, int (*bytes)(unsigned char *, int))
 {
-    size_t count = (size_t)luaL_checkint(L, 1);
+    size_t count = (size_t)luaL_checkinteger(L, 1);
     unsigned char tmp[256], *buf = tmp;
     if (count > sizeof tmp)
         buf = (unsigned char *)malloc(count);
@@ -1157,7 +1157,7 @@ static int pkey_to_pem(lua_State *L)
     struct evp_pkey_st *pkey_st = *pkey;
     int ret;
 
-    long len;
+    //long len;
     BUF_MEM *buf;
     BIO *mem = BIO_new(BIO_s_mem());
 
@@ -1176,7 +1176,8 @@ static int pkey_to_pem(lua_State *L)
         goto error;
     }
 
-    len = BIO_get_mem_ptr(mem, &buf);
+    //len = BIO_get_mem_ptr(mem, &buf);
+    BIO_get_mem_ptr(mem, &buf);
     lua_pushlstring(L, buf->data, buf->length);
     ret = 1;
 
