@@ -12,7 +12,7 @@ print("RAND version: " .. crypto._VERSION)
 print("")
 
 local SEEDFILE = "tmp.rnd"
-
+print(SEEDFILE)
 if rand.load(SEEDFILE) then
 	print("loaded previous random seed")
 end

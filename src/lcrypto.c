@@ -15,7 +15,6 @@
 #include <openssl/x509.h>
 #include <stddef.h>
 
-
 #ifndef MIN
 # define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
@@ -873,7 +872,7 @@ static int verify_fverify(lua_State *L)
 
 static int rand_do_bytes(lua_State *L, int (*bytes)(unsigned char *, int))
 {
-  size_t count = (size_t)luaL_checkint(L, 1);
+  size_t count = (size_t)luaL_checkinteger(L, 1);
   unsigned char tmp[256], *buf = tmp;
   if (count > sizeof tmp)
     buf = (unsigned char*)malloc(count);
@@ -989,7 +988,6 @@ static int pkey_to_pem(lua_State *L)
   struct evp_pkey_st *pkey_st = *pkey;
   int ret;
 
-  long len;
   BUF_MEM *buf;
   BIO *mem = BIO_new(BIO_s_mem());
 
@@ -1007,7 +1005,7 @@ static int pkey_to_pem(lua_State *L)
     goto error;
   }
 
-  len = BIO_get_mem_ptr(mem, &buf);
+  BIO_get_mem_ptr(mem, &buf);
   lua_pushlstring(L, buf->data, buf->length);
   ret = 1;
 
@@ -1048,7 +1046,7 @@ static int pkey_from_pem(lua_State *L)
   int ret;
 
   ret = BIO_puts(mem, key);
-  if (ret != strlen(key)) {
+  if (ret != (int)strlen(key)) {
     goto error;
   }
 
@@ -1509,6 +1507,39 @@ static int luacrypto_hex(lua_State *L)
   return 1;
 }
 
+static int luacrypto_base64_encode(lua_State *L)
+{
+  BUF_MEM *buf;
+  size_t len = 0;
+  const unsigned char * input = (unsigned char *) luaL_checklstring(L, 1, &len);
+  BIO *b64 = BIO_new(BIO_f_base64());
+  BIO *mem = BIO_new(BIO_s_mem());
+  BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+  mem = BIO_push(b64, mem);
+  BIO_write(mem, input, len);
+  BIO_flush(mem);
+  BIO_get_mem_ptr(mem, &buf);
+  lua_pushlstring(L, buf->data, buf->length);
+  BIO_free_all(mem);
+  return 1;
+}
+
+static int luacrypto_base64_decode(lua_State *L)
+{
+  size_t len, out = 0;
+  const unsigned char * input = (unsigned char *) luaL_checklstring(L, 1, &len);
+  char *buffer = (char*)malloc(len);
+
+  BIO *b64 = BIO_new(BIO_f_base64());
+  BIO *mem = BIO_new_mem_buf((void*)input, len);
+  BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+  mem = BIO_push(b64, mem);
+  out = BIO_read(mem, buffer, len);
+  lua_pushlstring(L, buffer, out);
+  free(buffer);
+  BIO_free_all(mem);
+  return 1;
+}
 /*************** x509 API ***************/
 
 static X509 *x509__load_cert(BIO *cert)
@@ -1707,7 +1738,7 @@ static int x509_ca_add_pem(lua_State *L)
 LUACRYPTO_API void luacrypto_createmeta (lua_State *L, const char *name, const luaL_Reg *methods)
 {
   if (!luaL_newmetatable (L, name))
-    return 0;
+    return;
 
   /* define metamethods */
   lua_pushvalue (L, -1); // push metatable
@@ -1879,6 +1910,8 @@ LUACRYPTO_API int luaopen_crypto(lua_State *L)
   struct luaL_Reg core_functions[] = {
     { "list", luacrypto_list },
     { "hex", luacrypto_hex },
+    { "base64", luacrypto_base64_encode},
+    { "unbase64", luacrypto_base64_decode},
     { NULL, NULL }
   };
 

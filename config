@@ -10,7 +10,7 @@ LIB_OPTION= -shared #for Linux
 
 # Lua version number (first and second digits of target version)
 LUA_VERSION_NUM= 514
-LIBNAME= $T.so
+LIBNAME= crypto.so
 
 OPENSSL_LIBS= -lcrypto -lssl
 OPENSSL_INCS= -I/usr/include/openssl

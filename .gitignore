@@ -3,3 +3,7 @@
 *.suo
 Debug
 Release
+*.o
+TAGS
+tags
+*.so
