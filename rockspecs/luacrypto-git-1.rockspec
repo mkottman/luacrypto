@@ -8,7 +8,7 @@ digests (MD5, SHA-1, HMAC, and more), encryption, decryption and crypto-grade ra
 	license = "MIT",
 }
 dependencies = {
-	"lua >= 5.1",
+	"lua >= 5.1, < 5.3",
 }
 source = {
 	url = [[git://github.com/mkottman/luacrypto.git]],
