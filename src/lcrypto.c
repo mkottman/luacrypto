@@ -1724,6 +1724,7 @@ static X509 *x509__x509_from_string(const char *pem)
     if (cert == NULL)
         goto error;
 
+    BIO_free(mem);
     return cert;
 
 error:
