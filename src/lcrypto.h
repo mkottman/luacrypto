@@ -7,7 +7,7 @@
 #define _LUACRYPTO_
 
 #ifndef LUACRYPTO_API
-#define LUACRYPTO_API   LUA_API
+#define LUACRYPTO_API LUA_API
 #endif
 
 #define LUACRYPTO_PREFIX      "LuaCrypto: "

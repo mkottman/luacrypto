@@ -33,7 +33,7 @@ for i, t in ipairs({"sha1", "md5", "sha1", "hmac"}) do
   assert(io.input(F))
   report("all", d:final(io.read("*all")), F, t)
   
-  d:reset(d)
+  d:reset()
   
   assert(io.input(F))
   while true do

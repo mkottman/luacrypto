@@ -7,3 +7,7 @@ Release
 TAGS
 tags
 *.so
+tests/priv.pem
+tests/pub.pem
+tests/tmp.rnd
+

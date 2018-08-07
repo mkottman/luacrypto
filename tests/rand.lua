@@ -35,13 +35,6 @@ end
 local N = 20
 local S = 5
 
-print(string.format("generating %d sets of %d random bytes using pseudo_bytes()", S, N))
-for i = 1, S do
-	local data = assert(rand.pseudo_bytes(N))
-	print(table.concat({string.byte(data, 1, N)}, ","))
-end
-print("")
-
 print(string.format("generating %d sets of %d random bytes using bytes()", S, N))
 for i = 1, S do
 	local data = assert(rand.bytes(N))
