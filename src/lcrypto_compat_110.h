@@ -292,19 +292,19 @@ int DH_set_length(DH* dh, long length)
 
 EVP_CIPHER_CTX* EVP_CIPHER_CTX_new()
 {
-    EVP_CIPHER_CTX* ctx = OPENSSL_malloc(sizeof(*ctx));
+    EVP_CIPHER_CTX* ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx != NULL) {
-        if (!EVP_CIPHER_CTX_init(ctx)) {
-            OPENSSL_free(ctx);
-            return NULL;
-        }
+        EVP_CIPHER_CTX_init(ctx);
     }
     return ctx;
 }
 
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX* ctx)
 {
+    EVP_CIPHER_CTX_cleanup(ctx);
+    OPENSSL_free(ctx);
 }
+
 const unsigned char* EVP_CIPHER_CTX_iv(const EVP_CIPHER_CTX* ctx)
 {
     return ctx->iv;
@@ -319,10 +319,7 @@ EVP_MD_CTX* EVP_MD_CTX_new(void)
 {
     EVP_MD_CTX* ctx = OPENSSL_zalloc(sizeof(EVP_MD_CTX));
     if (ctx != NULL) {
-        if (!EVP_MD_CTX_init(ctx)) {
-            OPENSSL_free(ctx);
-            return NUll;
-        }
+        EVP_MD_CTX_init(ctx);
     }
 
     return ctx;
@@ -332,7 +329,7 @@ int EVP_MD_CTX_reset(EVP_MD_CTX* ctx)
 {
     int ret = EVP_MD_CTX_cleanup(ctx);
     if (!ret) {
-        return ret
+        return ret;
     }
     EVP_MD_CTX_init(ctx);
     return ret;
@@ -340,8 +337,10 @@ int EVP_MD_CTX_reset(EVP_MD_CTX* ctx)
 
 void EVP_MD_CTX_free(EVP_MD_CTX* ctx)
 {
-    EVP_MD_CTX_cleanup(ctx);
-    OPENSSL_free(ctx);
+    if (ctx != NULL) {
+        EVP_MD_CTX_cleanup(ctx);
+        OPENSSL_free(ctx);
+    }
 }
 
 RSA_METHOD* RSA_meth_dup(const RSA_METHOD* meth)
@@ -414,22 +413,11 @@ int RSA_bits(const RSA* r)
     return (BN_num_bits(r->n));
 }
 
-RSA* EVP_PKEY_get0_RSA(EVP_PKEY* pkey)
-{
-    if (pkey->type != EVP_PKEY_RSA) {
-        return NULL;
-    }
-    return pkey->pkey.rsa;
-}
-
 HMAC_CTX* HMAC_CTX_new(void)
 {
-    HMAC_CTX* ctx = OPENSSL_malloc(sizeof(*ctx));
+    HMAC_CTX* ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx != NULL) {
-        if (!HMAC_CTX_reset(ctx)) {
-            HMAC_CTX_free(ctx);
-            return NULL;
-        }
+        HMAC_CTX_init(ctx);
     }
     return ctx;
 }
@@ -437,11 +425,18 @@ HMAC_CTX* HMAC_CTX_new(void)
 void HMAC_CTX_free(HMAC_CTX* ctx)
 {
     if (ctx != NULL) {
-        hmac_ctx_cleanup(ctx);
-        EVP_MD_CTX_free(ctx->i_ctx);
-        EVP_MD_CTX_free(ctx->o_ctx);
-        EVP_MD_CTX_free(ctx->md_ctx);
+        HMAC_CTX_cleanup(ctx);
         OPENSSL_free(ctx);
     }
+}
+
+DSA* EVP_PKEY_get0_DSA(EVP_PKEY* pkey)
+{
+    return pkey->pkey.dsa;
+}
+
+RSA* EVP_PKEY_get0_RSA(EVP_PKEY* pkey)
+{
+    return pkey->pkey.rsa;
 }
 #endif

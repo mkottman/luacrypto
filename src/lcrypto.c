@@ -29,6 +29,7 @@
 #include <lua.h>
 
 #include "lcrypto.h"
+#include "lcrypto_compat_110.h"
 
 LUACRYPTO_API int luaopen_crypto(lua_State* L);
 
@@ -599,7 +600,7 @@ static int hmac_update(lua_State* L)
     hmac_context* c = (hmac_context*)luaL_checkudata(L, 1, LUACRYPTO_HMACNAME);
     const char* s = luaL_checklstring(L, 2, &s_len);
 
-    if(HMAC_Update(c->ctx, (const unsigned char*)s, s_len) != 1) {
+    if (HMAC_Update(c->ctx, (const unsigned char*)s, s_len) != 1) {
         return crypto_error(L);
     }
 
@@ -621,7 +622,7 @@ static int hmac_final(lua_State* L)
         HMAC_Update(c->ctx, (const unsigned char*)s, s_len);
     }
 
-    if(HMAC_Final(c->ctx, digest, &written) != 1) {
+    if (HMAC_Final(c->ctx, digest, &written) != 1) {
         return crypto_error(L);
     }
 
@@ -1027,7 +1028,7 @@ static int pkey_generate(lua_State* L)
         return 1;
     } else {
         DSA* dsa = DSA_new();
-        if(DSA_generate_parameters_ex(dsa, key_len, NULL, 0, NULL, NULL, NULL) != 1) {
+        if (DSA_generate_parameters_ex(dsa, key_len, NULL, 0, NULL, NULL, NULL) != 1) {
             DSA_free(dsa);
             return crypto_error(L);
         }
