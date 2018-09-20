@@ -31,8 +31,6 @@
 #include "lcrypto.h"
 #include "lcrypto_compat_110.h"
 
-LUACRYPTO_API int luaopen_crypto(lua_State* L);
-
 static int crypto_error(lua_State* L)
 {
     char buf[120];
@@ -1779,7 +1777,7 @@ static int x509_ca_add_pem(lua_State* L)
 /*
 ** Create a metatable and keep stack balance when leave
 */
-LUACRYPTO_API void luacrypto_createmeta(lua_State* L, const char* name, const luaL_Reg* methods)
+static void luacrypto_createmeta(lua_State* L, const char* name, const luaL_Reg* methods)
 {
     if (!luaL_newmetatable(L, name))
         return;
@@ -1920,18 +1918,9 @@ static void create_metatables(lua_State* L)
 }
 
 /*
-** Define the metatable for the object on top of the stack
-*/
-LUACRYPTO_API void luacrypto_setmeta(lua_State* L, const char* name)
-{
-    luaL_getmetatable(L, name);
-    lua_setmetatable(L, -2);
-}
-
-/*
 ** Assumes the table is on top of the stack.
 */
-LUACRYPTO_API void luacrypto_set_info(lua_State* L)
+static void luacrypto_set_info(lua_State* L)
 {
     lua_pushliteral(L, "_COPYRIGHT");
     lua_pushliteral(L, "Copyright (C) 2005-2006 Keith Howe");
@@ -1948,7 +1937,7 @@ LUACRYPTO_API void luacrypto_set_info(lua_State* L)
 ** Creates the metatables for the objects and registers the
 ** driver open method.
 */
-LUACRYPTO_API int luaopen_crypto(lua_State* L)
+int luaopen_crypto(lua_State* L)
 {
     struct luaL_Reg core_functions[] = {
         { "list", luacrypto_list },
