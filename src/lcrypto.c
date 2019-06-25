@@ -1217,7 +1217,7 @@ static int pkey_from_pem(lua_State *L)
     size_t ret;
 
     ret = BIO_puts(mem, key);
-    if (ret != strlen(key))
+    if (ret != (int)strlen(key))
     {
         goto error;
     }
