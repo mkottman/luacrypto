@@ -1157,7 +1157,6 @@ static int pkey_to_pem(lua_State *L)
     struct evp_pkey_st *pkey_st = *pkey;
     int ret;
 
-    long len;
     BUF_MEM *buf;
     BIO *mem = BIO_new(BIO_s_mem());
 
@@ -1176,7 +1175,7 @@ static int pkey_to_pem(lua_State *L)
         goto error;
     }
 
-    len = BIO_get_mem_ptr(mem, &buf);
+    BIO_get_mem_ptr(mem, &buf);
     lua_pushlstring(L, buf->data, buf->length);
     ret = 1;
 
